@@ -1,18 +1,17 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Luby Hub", "Synapse")
-
-local Tab = Window:NewTab("ออโต้ฟาร์ม")
-local Section = Tab:NewSection("ฟาร์มกล่อง")
-local plr = game.Players.LocalPlayer
+local Tab = Window:NewTab("AutoFarm")
+local Section = Tab:NewSection("AutoFarm")
+local plr = game:GetService("Players").LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 
-local Tab = Window:NewTab("วาปไปที่ต่างๆ")
-local TeleportSection = Tab:NewSection("เลือกวาร์ปจุดต่าง ๆ")
+local Tab = Window:NewTab("Teleport Map")
+local TeleportSection = Tab:NewSection("Teleport Map")
 
 local teleportList = {
-    
     ["Shop"] = CFrame.new(-377.414978, -31.4648972, 1827.23376, 0.937943637, 0.0056101419, 0.346742332, -0.0806112289, 0.976007879, 0.202263251, -0.337288499, -0.217662856, 0.915892601),
     ["CAFE"] = CFrame.new(-184.333908, -32.6324806, 1450.97107, 0.542804658, 0.0135867689, 0.839749038, -0.0196342822, 0.999801099, -0.00348495319, -0.839629471, -0.0145962201, 0.542963505),
     ["book"] = CFrame.new(-48.9889183, -116.247437, 328.828979, -1, 0, 0, 0, 1, 0, 0, 0, -1),
@@ -32,22 +31,13 @@ local teleportList = {
     ["Domain"] = CFrame.new(15668.4658, -379.998291, 25310.0898, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["PB"] = CFrame.new(-2602.41211, 646.477661, -3351.8623, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["BattleArena"] = CFrame.new(856.786316, -428.90448, -750.567993, -1, 0, 0, 0, 1, 0, 0, 0, -1),
-    ["???????"] = CFrame.new(-3143.32495, -1.49950004, -10579.5752, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    ["กูไม่รู้มันคือไร"] = CFrame.new(-3143.32495, -1.49950004, -10579.5752, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["WOU2"] = CFrame.new(-18689.2637, 931.929993, 7134.66748, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["?????"] = CFrame.new(-637.749084, 1.00501442, -262.399475, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    ["ห้องทำงานพวกโง่"] = CFrame.new(-637.749084, 1.00501442, -262.399475, -1, 0, 0, 0, 1, 0, 0, 0, -1),
     ["เกดุ"] = CFrame.new(-7146.22119, -27.1148205, 1295.23523, 0, 0, 1, 0, 1, -0, -1, 0, 0),
     ["ดาบแดง"] = CFrame.new(-255.541168, 34.4699783, -2851.14014, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["ซอยด้านข้าง"] = CFrame.new(-202.499771, -21.7434502, 1475.51172),
-    ["กลางถนน"] = CFrame.new(-681.279785, -34.9928169, 1556.7666),
-    ["ร้านค้า"] = CFrame.new(-237.836639, -35.0265427, 1272.09192),
-    ["ลานจอดรถ"] = CFrame.new(-209.397476, -34.9928093, 1918.94165),
-    ["ข้างโกดัง"] = CFrame.new(-697.179321, -34.9928131, 1276.71667),
-    ["หลังตึก"] = CFrame.new(-585.617004, -34.9928017, 1918.23755),
-    ["หลังโรงงาน"] = CFrame.new(-537.18335, -34.9928093, 1819.58142),
-    ["ตึกตรงข้าม"] = CFrame.new(-313.208466, -34.184124, 1802.14001),
-    ["ปากซอย"] = CFrame.new(58.4846497, -35.0372467, 1785.9054),
-    ["ริมแม่น้ำ"] = CFrame.new(73.7697754, -35.0372467, 1544.45923),
-    ["ข้างสะพาน"] = CFrame.new(-98.1705246, -35.2372437, 1558.54834),
+    ["Cave"] = CFrame.new(-2284.29199, -393.49118, -4989.96924, -0.993314743, 0.100021183, 0.0576342195, 0.0373474397, -0.1939677, 0.980296731, 0.109229609, 0.975895643, 0.188935399),
+    ["ถ้วย"] = CFrame.new(3813.12231, -157.168457, 4539.01416, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 }
 
 for name, cframe in pairs(teleportList) do
@@ -133,7 +123,6 @@ for name, cframe in pairs(roninQuestTeleportList) do
     end)
 end
 
-
 local vim = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
@@ -152,36 +141,30 @@ local chants = {
     "Mannaz"
 }
 
--- กำหนดดีเลย์สำหรับการพิมพ์แต่ละตัวอักษร (ปรับค่าได้ตามต้องการ)
-local TYPE_DELAY = 0.05 -- 0.05 วินาทีต่อตัวอักษร
+local TYPE_DELAY = 0.05
 
 local function typeChat(message)
     local TextChatService = game:GetService("TextChatService")
     local GeneralChannel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral") 
 
     if GeneralChannel then
-        -- ถ้าใช้ TextChatService เราจะส่งข้อความได้ทันที
         GeneralChannel:SendAsync(message)
         print("สวด:", message)
     else
         warn("ไม่พบช่องแชท RBXGeneral หรือช่องแชทที่กำหนด ใช้ VirtualInputManager แทน")
-        -- Fallback to VirtualInputManager for character-by-character typing
         
-        -- เปิดช่องแชท
         vim:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
         task.wait(0.1) 
         vim:SendKeyEvent(false, Enum.KeyCode.Slash, false, game) 
 
-        -- พิมพ์ข้อความทีละตัวอักษร
         for i = 1, #message do
             local char_to_type = message:sub(i, i)
             vim:SendTextInput(char_to_type)
-            task.wait(TYPE_DELAY) -- หน่วงเวลาหลังพิมพ์แต่ละตัว
+            task.wait(TYPE_DELAY)
         end
         
-        task.wait(0.1) -- หน่วงเวลาก่อนกด Enter
+        task.wait(0.1)
 
-        -- กด Enter เพื่อส่งข้อความ
         vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
         task.wait(0.1) 
         vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game) 
@@ -195,7 +178,8 @@ for _, chant in ipairs(chants) do
     end)
 end
 
-local teleportPoints = {
+local farmTeleportPoints = {
+    
     CFrame.new(-676.028442, -34.4872017, 1824.49011),
     CFrame.new(-202.499771, -21.7434502, 1475.51172),
     CFrame.new(-681.279785, -34.9928169, 1556.7666),
@@ -208,46 +192,118 @@ local teleportPoints = {
     CFrame.new(58.4846497, -35.0372467, 1785.9054),
     CFrame.new(73.7697754, -35.0372467, 1544.45923),
     CFrame.new(-98.1705246, -35.2372437, 1558.54834),
+
 }
 
 local isFarming = false
+local farmCoroutine = nil
 
-local function holdEOnItem(item)
-    print("กำลังโต้ตอบกับไอเท็ม:", item.Name)
+local function interactWithItem(item)
+    local proximityPrompt = item:FindFirstChildOfClass("ProximityPrompt")
+    if proximityPrompt and proximityPrompt.Enabled then
+        print("กำลังโต้ตอบกับ ProximityPrompt ของ:", item.Name)
+        local activationKey = proximityPrompt.KeyboardKeyCode
+        if activationKey ~= Enum.KeyCode.Unknown then
+            VirtualInputManager:SendKeyEvent(true, activationKey, false, game)
+            task.wait(proximityPrompt.HoldDuration + 0.1)
+            VirtualInputManager:SendKeyEvent(false, activationKey, false, game)
+        else
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            task.wait(0.1)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        end
+    else
+        print("กำลังพยายามเก็บไอเท็ม (กด E/F) หรือเดินชน:", item.Name)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+    end
 end
 
-local function startFarming()
-    task.spawn(function()
-        while isFarming do
-            for _, cframe in ipairs(teleportPoints) do
+local function startFarmingLoop()
+    while isFarming do
+        for i, cframe in ipairs(farmTeleportPoints) do
+            if not isFarming then break end
+
+            hrp.CFrame = cframe
+            print(string.format("วาร์ปไปยังจุดฟาร์มที่ %d: %s", i, cframe.Position))
+            task.wait(1.5) -- รอให้โหลดฉากและไอเทมปรากฏ
+
+            local radius = 35 -- ปรับรัศมีการค้นหาไอเท็มตามความเหมาะสม
+            
+            local foundItems = {}
+
+            for _, item in ipairs(workspace:GetDescendants()) do
                 if not isFarming then break end
-                hrp.CFrame = cframe
-                task.wait(1)
                 
-                for _, item in ipairs(workspace:GetDescendants()) do
-                    if not isFarming then break end
-                    if item:IsA("Tool") and item:FindFirstChild("Handle") then
-                        if item.Name == "Box" or item.Name == "Barrel" then
-                            holdEOnItem(item)
-                            task.wait(0.1)
+                local isPotentialItem = false
+                local itemNamesToCollect = {
+                    "Item", "Loot", "DroppedItem", "Coin", "Cash", "Material", "Orb",
+                    "Box", "Barrel",
+                    "StandArrow", "Rokakaka", "RibCage", "Heart", "Eye",
+                    "Ability Orb", "Skill Orb", "Gem", "Fragment", "Dust"
+                }
+
+                if item:IsA("BasePart") or (item:IsA("Model") and item:FindFirstChild("HumanoidRootPart")) then
+                    local itemPosition = item.Position
+                    if item:IsA("Model") and item.PrimaryPart then
+                        itemPosition = item.PrimaryPart.Position
+                    elseif item:IsA("BasePart") then
+                        itemPosition = item.Position
+                    end
+
+                    local distance = (hrp.Position - itemPosition).Magnitude
+                    if distance <= radius then
+                        for _, namePattern in ipairs(itemNamesToCollect) do
+                            if string.find(item.Name, namePattern) then
+                                isPotentialItem = true
+                                break
+                            end
+                        end
+                        if isPotentialItem then
+                            table.insert(foundItems, item)
                         end
                     end
                 end
-                task.wait(2)
             end
-            task.wait(3)
+
+            if #foundItems > 0 then
+                print(string.format("พบไอเท็ม %d ชิ้นในบริเวณจุดวาร์ป", #foundItems))
+                for _, itemToCollect in ipairs(foundItems) do
+                    if not isFarming then break end
+                    hrp.CFrame = CFrame.new(itemToCollect.Position) + Vector3.new(0, 5, 0) -- วาร์ปไปเหนือไอเท็มเล็กน้อย
+                    task.wait(0.2) -- รอให้ตัวละครลงมา
+                    interactWithItem(itemToCollect)
+                    task.wait(0.5) -- หน่วงเวลาหลังเก็บแต่ละชิ้น
+                end
+            else
+                print("ไม่พบไอเท็มในบริเวณจุดวาร์ป")
+            end
+            task.wait(1) -- รอสักครู่ก่อนวาร์ปไปจุดถัดไป แม้ว่าจะไม่เจอไอเท็มก็ตาม
         end
-        print("เรียบร้อย")
-    end)
+        print("วนครบทุกจุดฟาร์มแล้ว กำลังเริ่มรอบใหม่...")
+        task.wait(3) -- หน่วงเวลาหลังจากวนครบทุกจุดวาร์ปแล้ว ก่อนจะเริ่มรอบใหม่ทั้งหมด
+    end
+    print("AutoFarm หยุดทำงาน")
 end
 
 Section:NewToggle("AutoFarm", "เปิด/ปิดระบบฟาร์ม", function(state)
     if state then
-        print("เริ่มฟาร์ม")
-        isFarming = true
-        startFarming()
+        if not isFarming then
+            print("เริ่ม AutoFarm")
+            isFarming = true
+            farmCoroutine = task.spawn(startFarmingLoop)
+        end
     else
-        print("หยุดฟาร์ม")
+        print("หยุด AutoFarm")
         isFarming = false
+        if farmCoroutine then
+            task.cancel(farmCoroutine)
+            farmCoroutine = nil
+        end
     end
 end)
