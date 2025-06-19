@@ -1,44 +1,17 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Luby Hub", "Synapse")
-
-local plr = game:GetService("Players").LocalPlayer
+local Tab = Window:NewTab("AutoFarm")
+local Section = Tab:NewSection("AutoFarm")
+local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
-local hum = char:WaitForChild("Humanoid")
 local UserInputService = game:GetService("UserInputService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
--- Store original values - Make sure these are updated if character respawns
-local originalWalkSpeed = hum.WalkSpeed
-local originalJumpPower = hum.JumpPower
-local originalGravity = workspace.Gravity
-
--- Re-initialize char, hrp, hum if character respawns
-plr.CharacterAdded:Connect(function(newChar)
-    char = newChar
-    hrp = char:WaitForChild("HumanoidRootPart")
-    hum = char:WaitForChild("Humanoid")
-    originalWalkSpeed = hum.WalkSpeed -- Update original values on respawn
-    originalJumpPower = hum.JumpPower
-    -- If Speed/Jump Hack was active, reapply them
-    if isSpeedHacked then
-        hum.WalkSpeed = MovementSection:GetValue("WalkSpeed") or 50
-    end
-    if isJumpHacked then
-        hum.JumpPower = MovementSection:GetValue("JumpPower") or 100
-    end
-end)
-
-
---- AutoFarm Tab ---
-local AutoFarmTab = Window:NewTab("AutoFarm")
-local AutoFarmSection = AutoFarmTab:NewSection("AutoFarm")
-
---- Teleport Map Tab ---
-local TeleportMapTab = Window:NewTab("Teleport Map")
-local TeleportSection = TeleportMapTab:NewSection("Teleport Map")
+local Tab = Window:NewTab("Teleport Map")
+local TeleportSection = Tab:NewSection("Teleport Map")
 
 local teleportList = {
+    
     ["Shop"] = CFrame.new(-377.414978, -31.4648972, 1827.23376, 0.937943637, 0.0056101419, 0.346742332, -0.0806112289, 0.976007879, 0.202263251, -0.337288499, -0.217662856, 0.915892601),
     ["CAFE"] = CFrame.new(-184.333908, -32.6324806, 1450.97107, 0.542804658, 0.0135867689, 0.839749038, -0.0196342822, 0.999801099, -0.00348495319, -0.839629471, -0.0145962201, 0.542963505),
     ["book"] = CFrame.new(-48.9889183, -116.247437, 328.828979, -1, 0, 0, 0, 1, 0, 0, 0, -1),
@@ -74,9 +47,8 @@ for name, cframe in pairs(teleportList) do
     end)
 end
 
---- Teleport NPC Tab ---
-local TeleportNPCTab = Window:NewTab("Teleport NPC")
-local NPCTeleportSection = TeleportNPCTab:NewSection("Teleport NPC")
+local Tab = Window:NewTab("Teleport NPC")
+local NPCTeleportSection = Tab:NewSection("Teleport NPC")
 
 local npcTeleportList = {
     AMM = CFrame.new(-236.787, -32.525, 1472.125),
@@ -120,7 +92,9 @@ local npcTeleportList = {
     TurboGranny_Bon = CFrame.new(-3686.247, 610.462, 5376.722),
     Vergilius = CFrame.new(-694.137, -31.12, 1585.219),
     buttersky20000 = CFrame.new(-2067.959, -289.603, -4685.778),
-    piknishi = CFrame.new(-193.988, -32.009, 1464.331)
+    piknishi = CFrame.new(-193.988, -32.009, 1464.331),
+    Baiken = CFrame.new(-446.574921, -33.3681908, 1818.41248, 0.105164446, 0.187645465, 0.97659111, 0.0408497751, 0.980392337, -0.192774728, -0.993615866, 0.060166575, 0.0954371542)
+   
 }
 
 for name, cframe in pairs(npcTeleportList) do
@@ -130,9 +104,8 @@ for name, cframe in pairs(npcTeleportList) do
     end)
 end
 
---- Ronin Quest Tab ---
-local RoninQuestTab = Window:NewTab("Ronin Quest")
-local RoninQuestTeleportSection = RoninQuestTab:NewSection("Ronin QuestV2")
+local Tab = Window:NewTab("Ronin Quest")
+local RoninQuestTeleportSection = Tab:NewSection("Ronin QuestV2")
 
 local roninQuestTeleportList = {
     ["1"] = CFrame.new(-534.262878, -261.767517, -4447.94678, 1, 0, 0, 0, 1, 0, 0, 0, 1),
@@ -152,9 +125,13 @@ for name, cframe in pairs(roninQuestTeleportList) do
     end)
 end
 
---- Chants Tab ---
-local ChantsTab = Window:NewTab("Chants")
-local ChantSection = ChantsTab:NewSection("Chants")
+
+local vim = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+local chantTab = Window:NewTab("Chants")
+local chantSection = chantTab:NewSection("Chants")
 
 local chants = {
     "Teiwaz",
@@ -167,254 +144,50 @@ local chants = {
     "Mannaz"
 }
 
-local TYPE_DELAY = 0.05
+
+local TYPE_DELAY = 0.05 
 
 local function typeChat(message)
     local TextChatService = game:GetService("TextChatService")
     local GeneralChannel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral") 
 
     if GeneralChannel then
+        
         GeneralChannel:SendAsync(message)
         print("สวด:", message)
     else
         warn("ไม่พบช่องแชท RBXGeneral หรือช่องแชทที่กำหนด ใช้ VirtualInputManager แทน")
+       
         
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
+       
+        vim:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
         task.wait(0.1) 
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Slash, false, game) 
+        vim:SendKeyEvent(false, Enum.KeyCode.Slash, false, game) 
 
+        
         for i = 1, #message do
             local char_to_type = message:sub(i, i)
-            VirtualInputManager:SendTextInput(char_to_type)
-            task.wait(TYPE_DELAY)
+            vim:SendTextInput(char_to_type)
+            task.wait(TYPE_DELAY) 
         end
         
         task.wait(0.1)
 
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+      
+        vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
         task.wait(0.1) 
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Return, false, game) 
+        vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game) 
         print("สวด (ผ่าน VirtualInputManager ทีละตัว):", message)
     end
 end
 
 for _, chant in ipairs(chants) do
-    ChantSection:NewButton("Chants: " .. chant, "พิมพ์ " .. chant .. " ลงแชท", function()
+    chantSection:NewButton("Chants: " .. chant, "พิมพ์ " .. chant .. " ลงแชท", function()
         typeChat(chant)
     end)
 end
 
---- Movement Tab ---
-local MovementTab = Window:NewTab("Movement")
-local MovementSection = MovementTab:NewSection("Player Movement")
-
--- Run Speed
-local isSpeedHacked = false
--- No need for speedConnection for WalkSpeed/JumpPower as they are direct property changes
-MovementSection:NewSlider("WalkSpeed", "ปรับความเร็วในการเดิน", 500, 16, function(value)
-    if isSpeedHacked and hum then -- Only update if speed hack is active and humanoid exists
-        hum.WalkSpeed = value
-    end
-end)
-
-MovementSection:NewToggle("Speed Hack", "เปิด/ปิดวิ่งเร็ว (ล็อคค่า)", function(state)
-    isSpeedHacked = state
-    if hum then -- Ensure humanoid exists before modifying
-        if state then
-            print("เปิดวิ่งเร็ว")
-            originalWalkSpeed = hum.WalkSpeed -- Store current walkspeed before changing
-            hum.WalkSpeed = MovementSection:GetValue("WalkSpeed") or 50 -- Set to slider value or default high
-        else
-            print("ปิดวิ่งเร็ว")
-            hum.WalkSpeed = originalWalkSpeed -- Restore original walkspeed
-        end
-    end
-end)
-
--- Jump Power
-local isJumpHacked = false
-MovementSection:NewSlider("JumpPower", "ปรับความสูงในการกระโดด", 1000, 50, function(value)
-    if isJumpHacked and hum then -- Only update if jump hack is active and humanoid exists
-        hum.JumpPower = value
-    end
-end)
-
-MovementSection:NewToggle("Jump Hack", "เปิด/ปิดกระโดดสูง (ล็อคค่า)", function(state)
-    isJumpHacked = state
-    if hum then -- Ensure humanoid exists before modifying
-        if state then
-            print("เปิดกระโดดสูง")
-            originalJumpPower = hum.JumpPower -- Store current jump power
-            hum.JumpPower = MovementSection:GetValue("JumpPower") or 100 -- Set to slider value or default high
-        else
-            print("ปิดกระโดดสูง")
-            hum.JumpPower = originalJumpPower -- Restore original jump power
-        end
-    end
-end)
-
--- Fly
-local isFlying = false
-local flySpeed = 100 -- ความเร็วในการบิน
-local flyConnection = nil
-local originalMoveState = hum.Sit -- Store original Humanoid.Sit state (will be updated on char respawn)
-local inputConnections = {} -- Table to hold input connections for fly mode
-
-MovementSection:NewToggle("Fly", "เปิด/ปิดโหมดบิน", function(state)
-    isFlying = state
-    if isFlying then
-        print("เปิดโหมดบิน")
-        originalGravity = workspace.Gravity
-        workspace.Gravity = 0 -- ปิดแรงโน้มถ่วง
-        originalMoveState = hum.PlatformStand -- Store original PlatformStand state
-        hum.PlatformStand = true -- ทำให้ตัวละครลอย
-        
-        -- Disconnect existing input connections if any
-        for _, conn in pairs(inputConnections) do
-            conn:Disconnect()
-        end
-        inputConnections = {}
-
-        -- Input Began Connection
-        table.insert(inputConnections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
-            if isFlying and hrp then -- Check hrp existence
-                local currentCameraCFrame = workspace.CurrentCamera.CFrame
-                local moveDirection = Vector3.new(0,0,0)
-
-                if input.KeyCode == Enum.KeyCode.W then
-                    moveDirection = moveDirection + currentCameraCFrame.lookVector
-                elseif input.KeyCode == Enum.KeyCode.S then
-                    moveDirection = moveDirection - currentCameraCFrame.lookVector
-                elseif input.KeyCode == Enum.KeyCode.A then
-                    moveDirection = moveDirection - currentCameraCFrame.rightVector
-                elseif input.KeyCode == Enum.KeyCode.D then
-                    moveDirection = moveDirection + currentCameraCFrame.rightVector
-                elseif input.KeyCode == Enum.KeyCode.Space then
-                    moveDirection = moveDirection + Vector3.new(0, 1, 0)
-                elseif input.KeyCode == Enum.KeyCode.LeftControl then
-                    moveDirection = moveDirection - Vector3.new(0, 1, 0)
-                end
-                
-                -- Normalize the direction to prevent faster movement diagonally
-                if moveDirection.Magnitude > 0 then
-                    hrp.Velocity = moveDirection.Unit * flySpeed
-                else
-                    hrp.Velocity = Vector3.new(0,0,0) -- Stop if no key is pressed (in case of other inputs)
-                end
-            end
-        end))
-        
-        -- Input Ended Connection
-        table.insert(inputConnections, UserInputService.InputEnded:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
-            if isFlying and hrp then -- Check hrp existence
-                -- Check if any of the movement keys are still pressed
-                local anyMovementKey = UserInputService:IsKeyDown(Enum.KeyCode.W) or
-                                       UserInputService:IsKeyDown(Enum.KeyCode.S) or
-                                       UserInputService:IsKeyDown(Enum.KeyCode.A) or
-                                       UserInputService:IsKeyDown(Enum.KeyCode.D) or
-                                       UserInputService:IsKeyDown(Enum.KeyCode.Space) or
-                                       UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
-                
-                if not anyMovementKey then
-                    hrp.Velocity = Vector3.new(0,0,0) -- หยุดการเคลื่อนที่เมื่อไม่มีปุ่มกด
-                end
-            end
-        end))
-
-        -- To keep applying velocity as long as keys are held down (for smoother movement)
-        -- This part ensures continuous movement based on held keys
-        flyConnection = game:GetService("RunService").Heartbeat:Connect(function()
-            if isFlying and hrp then
-                local currentCameraCFrame = workspace.CurrentCamera.CFrame
-                local moveDirection = Vector3.new(0,0,0)
-
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                    moveDirection = moveDirection + currentCameraCFrame.lookVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                    moveDirection = moveDirection - currentCameraCFrame.lookVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                    moveDirection = moveDirection - currentCameraCFrame.rightVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                    moveDirection = moveDirection + currentCameraCFrame.rightVector
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-                    moveDirection = moveDirection + Vector3.new(0, 1, 0)
-                end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-                    moveDirection = moveDirection - Vector3.new(0, 1, 0)
-                end
-
-                if moveDirection.Magnitude > 0 then
-                    hrp.Velocity = moveDirection.Unit * flySpeed
-                else
-                    hrp.Velocity = Vector3.new(0,0,0) -- Stop if no key is pressed
-                end
-            end
-        end)
-
-    else
-        print("ปิดโหมดบิน")
-        workspace.Gravity = originalGravity -- คืนค่าแรงโน้มถ่วง
-        hum.PlatformStand = originalMoveState -- คืนค่า PlatformStand เดิม
-        if hrp then hrp.Velocity = Vector3.new(0,0,0) end -- หยุดแรงค้าง
-        
-        -- Disconnect all fly related connections
-        if flyConnection then
-            flyConnection:Disconnect()
-            flyConnection = nil
-        end
-        for _, conn in pairs(inputConnections) do
-            conn:Disconnect()
-        end
-        inputConnections = {}
-    end
-end)
-
-
--- Noclip (เดินทะลุ)
-local isNoClipping = false
-local noclipConnection = nil
-
-MovementSection:NewToggle("Noclip", "เปิด/ปิดโหมดเดินทะลุ", function(state)
-    isNoClipping = state
-    if isNoClipping then
-        print("เปิดโหมดเดินทะลุ (NoClip)")
-        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
-            if char then -- Ensure character exists
-                for _, part in ipairs(char:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                        part.CanTouch = false
-                    end
-                end
-            end
-        end)
-    else
-        print("ปิดโหมดเดินทะลุ (NoClip)")
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
-        end
-        -- ตรวจสอบให้แน่ใจว่ากลับมาชนวัตถุได้ (อาจต้องรอ Char re-spawn หรือ Manually Re-enable)
-        if char then -- Ensure character exists
-            for _, part in ipairs(char:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                    part.CanTouch = true
-                end
-            end
-        end
-    end
-end)
-
-
---- AutoFarm Logic ---
-local farmTeleportPoints = {
+local teleportPoints = {
     CFrame.new(-676.028442, -34.4872017, 1824.49011),
     CFrame.new(-202.499771, -21.7434502, 1475.51172),
     CFrame.new(-681.279785, -34.9928169, 1556.7666),
@@ -430,131 +203,43 @@ local farmTeleportPoints = {
 }
 
 local isFarming = false
-local farmCoroutine = nil
 
-local function interactWithItem(item)
-    local proximityPrompt = item:FindFirstChildOfClass("ProximityPrompt")
-    if proximityPrompt and proximityPrompt.Enabled then
-        print("กำลังโต้ตอบกับ ProximityPrompt ของ:", item.Name)
-        local activationKey = proximityPrompt.KeyboardKeyCode
-        if activationKey ~= Enum.KeyCode.Unknown then
-            VirtualInputManager:SendKeyEvent(true, activationKey, false, game)
-            task.wait(proximityPrompt.HoldDuration + 0.1)
-            VirtualInputManager:SendKeyEvent(false, activationKey, false, game)
-        else
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            task.wait(0.1)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-            task.wait(0.1)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        end
-    else
-        print("กำลังพยายามเก็บไอเท็ม (กด E/F) หรือเดินชน:", item.Name)
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        task.wait(0.1)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(0.1)
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-    end
+local function holdEOnItem(item)
+    print("กำลังโต้ตอบกับไอเท็ม:", item.Name)
 end
 
-local function startFarmingLoop()
-    while isFarming do
-        if not char or not hrp or not hum then
-            print("รอตัวละครโหลดใน AutoFarm...")
-            char = plr.Character or plr.CharacterAdded:Wait()
-            hrp = char:WaitForChild("HumanoidRootPart")
-            hum = char:WaitForChild("Humanoid")
-            task.wait(1) -- รอให้พร้อม
-            continue
-        end
-
-        for i, cframe in ipairs(farmTeleportPoints) do
-            if not isFarming then break end
-
-            hrp.CFrame = cframe
-            print(string.format("วาร์ปไปยังจุดฟาร์มที่ %d: %s", i, cframe.Position))
-            task.wait(1.5) -- รอให้โหลดฉากและไอเทมปรากฏ
-
-            local radius = 35 
-            local foundItems = {}
-            
-            for _, item in ipairs(workspace:GetDescendants()) do 
+local function startFarming()
+    task.spawn(function()
+        while isFarming do
+            for _, cframe in ipairs(teleportPoints) do
                 if not isFarming then break end
+                hrp.CFrame = cframe
+                task.wait(1)
                 
-                local isPotentialItem = false
-                local itemNamesToCollect = {
-                    "Item", "Loot", "DroppedItem", "Coin", "Cash", "Material", "Orb",
-                    "Box", "Barrel",
-                    "StandArrow", "Rokakaka", "RibCage", "Heart", "Eye",
-                    "Ability Orb", "Skill Orb", "Gem", "Fragment", "Dust"
-                }
-                
-                local itemPosition = nil
-                if item:IsA("BasePart") then
-                    itemPosition = item.Position
-                elseif item:IsA("Model") and item.PrimaryPart then
-                    itemPosition = item.PrimaryPart.Position
-                end
-
-                if itemPosition then
-                    local distance = (hrp.Position - itemPosition).Magnitude
-                    if distance <= radius then
-                        for _, namePattern in ipairs(itemNamesToCollect) do
-                            if string.find(item.Name, namePattern) then
-                                isPotentialItem = true
-                                break
-                            end
-                        end
-                        
-                        if (item.Parent and item.Parent.Name == "Item") or (item:IsA("Model") and item.Name == "Item") then
-                             isPotentialItem = true
-                        end
-
-                        if isPotentialItem then
-                            table.insert(foundItems, item)
+                for _, item in ipairs(workspace:GetDescendants()) do
+                    if not isFarming then break end
+                    if item:IsA("Tool") and item:FindFirstChild("Handle") then
+                        if item.Name == "Box" or item.Name == "Barrel" then
+                            holdEOnItem(item)
+                            task.wait(0.1)
                         end
                     end
                 end
+                task.wait(2)
             end
-
-            if #foundItems > 0 then
-                print(string.format("พบไอเท็ม %d ชิ้นในบริเวณจุดวาร์ป", #foundItems))
-                for _, itemToCollect in ipairs(foundItems) do
-                    if not isFarming then break end
-                    hrp.CFrame = CFrame.new(itemToCollect.Position) + Vector3.new(0, 5, 0)
-                    task.wait(0.2)
-                    interactWithItem(itemToCollect)
-                    task.wait(0.5)
-                end
-            else
-                print("ไม่พบไอเท็มในบริเวณจุดวาร์ป")
-            end
-            task.wait(1)
+            task.wait(3)
         end
-        print("วนครบทุกจุดฟาร์มแล้ว กำลังเริ่มรอบใหม่...")
-        task.wait(3)
-    end
-    print("AutoFarm หยุดทำงาน")
+        print("เรียบร้อย")
+    end)
 end
 
-AutoFarmSection:NewToggle("AutoFarm", "เปิด/ปิดระบบฟาร์ม", function(state)
+Section:NewToggle("AutoFarm", "เปิด/ปิดระบบฟาร์ม", function(state)
     if state then
-        if not isFarming then
-            print("เริ่ม AutoFarm")
-            isFarming = true
-            farmCoroutine = task.spawn(startFarmingLoop)
-        end
+        print("เริ่มฟาร์ม")
+        isFarming = true
+        startFarming()
     else
-        print("หยุด AutoFarm")
+        print("หยุดฟาร์ม")
         isFarming = false
-        if farmCoroutine then
-            task.cancel(farmCoroutine)
-            farmCoroutine = nil
-        end
     end
-end)
+end)                                                                                                                        
