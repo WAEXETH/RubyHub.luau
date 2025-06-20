@@ -1,17 +1,114 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Luby Hub", "Synapse")
-local Tab = Window:NewTab("AutoFarm")
-local Section = Tab:NewSection("AutoFarm")
+
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players") 
+local VirtualInputManager = game:GetService("VirtualInputManager") 
+local workspace = game:GetService("Workspace") 
 
-local Tab = Window:NewTab("Teleport Map")
-local TeleportSection = Tab:NewSection("Teleport Map")
+-- -----------------------------------------------------------------------------
+-- แท็บแรก: Auto Farm Box
+-- -----------------------------------------------------------------------------
+local autoFarmBoxTab = Window:NewTab("Auto Farm Box")
+local autoFarmBoxSection = autoFarmBoxTab:NewSection("Box & Barrel Farm")
+
+local isAutoFarmingBoxes = false 
+local E_HOLD_TIME = 2 
+local EXCLUDED_ITEM_INDEX = 6 
+local EXCLUDED_ITEM = nil 
+
+local function holdE_AutoFarm(prompt)
+    if not prompt then return end
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    task.wait(prompt.HoldDuration or E_HOLD_TIME)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local function collectPrompt_AutoFarm(prompt)
+    if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Parent then return end
+    hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
+    task.wait(0.3)
+    holdE_AutoFarm(prompt)
+    print("✅ เก็บ:", prompt.Parent.Name)
+end
+
+local function getAllValidPrompts_AutoFarm()
+    local results = {}
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ProximityPrompt") and v.Parent and v.Enabled then
+            local name = v.Parent.Name
+            if name == "Box" or name == "Barrel" then
+                table.insert(results, v)
+            end
+        end
+    end
+    return results
+end
+
+local function collectItemsInWorkspace_AutoFarm()
+    if not workspace:FindFirstChild("Item") then return end
+
+    if EXCLUDED_ITEM == nil then
+        local children = workspace.Item:GetChildren()
+        if #children >= EXCLUDED_ITEM_INDEX then
+            EXCLUDED_ITEM = children[EXCLUDED_ITEM_INDEX]
+        end
+    end
+
+    for _, item in ipairs(workspace.Item:GetChildren()) do
+        if item and item ~= EXCLUDED_ITEM then
+            local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+            if prompt then
+                collectPrompt_AutoFarm(prompt)
+                task.wait(1)
+            end
+        end
+    end
+end
+
+local function startAutoFarmBoxes()
+    task.spawn(function()
+        while isAutoFarmingBoxes do
+            local prompts = getAllValidPrompts_AutoFarm()
+
+            if #prompts > 0 then
+                for _, p in ipairs(prompts) do
+                    if not isAutoFarmingBoxes then break end 
+                    collectPrompt_AutoFarm(p)
+                    task.wait(1.2)
+                end
+            else
+                print("📭 ไม่พบกล่องหรือบาเรล รอสแกนใหม่...")
+            end
+
+            collectItemsInWorkspace_AutoFarm() 
+
+            task.wait(2.5)
+        end
+        print("หยุด Auto Farm กล่องและบาเรลแล้ว")
+    end)
+end
+
+autoFarmBoxSection:NewToggle("Auto Farm Boxes & Barrels", "เปิด/ปิดระบบฟาร์มกล่องและบาเรลอัตโนมัติ", function(state)
+    isAutoFarmingBoxes = state
+    if isAutoFarmingBoxes then
+        print("เริ่ม Auto Farm กล่องและบาเรล")
+        startAutoFarmBoxes()
+    else
+        print("หยุด Auto Farm กล่องและบาเรล")
+    end
+end)
+
+-- -----------------------------------------------------------------------------
+-- แท็บที่สอง: Teleport Map
+-- -----------------------------------------------------------------------------
+local TeleportMapTab = Window:NewTab("Teleport Map") 
+local TeleportSection = TeleportMapTab:NewSection("Teleport Map")
 
 local teleportList = {
-    
     ["Shop"] = CFrame.new(-377.414978, -31.4648972, 1827.23376, 0.937943637, 0.0056101419, 0.346742332, -0.0806112289, 0.976007879, 0.202263251, -0.337288499, -0.217662856, 0.915892601),
     ["CAFE"] = CFrame.new(-184.333908, -32.6324806, 1450.97107, 0.542804658, 0.0135867689, 0.839749038, -0.0196342822, 0.999801099, -0.00348495319, -0.839629471, -0.0145962201, 0.542963505),
     ["book"] = CFrame.new(-48.9889183, -116.247437, 328.828979, -1, 0, 0, 0, 1, 0, 0, 0, -1),
@@ -47,8 +144,11 @@ for name, cframe in pairs(teleportList) do
     end)
 end
 
-local Tab = Window:NewTab("Teleport NPC")
-local NPCTeleportSection = Tab:NewSection("Teleport NPC")
+-- -----------------------------------------------------------------------------
+-- แท็บที่สาม: Teleport NPC
+-- -----------------------------------------------------------------------------
+local NPCTeleportTab = Window:NewTab("Teleport NPC") 
+local NPCTeleportSection = NPCTeleportTab:NewSection("Teleport NPC")
 
 local npcTeleportList = {
     AMM = CFrame.new(-236.787, -32.525, 1472.125),
@@ -94,7 +194,6 @@ local npcTeleportList = {
     buttersky20000 = CFrame.new(-2067.959, -289.603, -4685.778),
     piknishi = CFrame.new(-193.988, -32.009, 1464.331),
     Baiken = CFrame.new(-446.574921, -33.3681908, 1818.41248, 0.105164446, 0.187645465, 0.97659111, 0.0408497751, 0.980392337, -0.192774728, -0.993615866, 0.060166575, 0.0954371542)
-   
 }
 
 for name, cframe in pairs(npcTeleportList) do
@@ -104,8 +203,11 @@ for name, cframe in pairs(npcTeleportList) do
     end)
 end
 
-local Tab = Window:NewTab("Ronin Quest")
-local RoninQuestTeleportSection = Tab:NewSection("Ronin QuestV2")
+-- -----------------------------------------------------------------------------
+-- แท็บที่สี่: Ronin Quest
+-- -----------------------------------------------------------------------------
+local RoninQuestTab = Window:NewTab("Ronin Quest") 
+local RoninQuestTeleportSection = RoninQuestTab:NewSection("Ronin QuestV2")
 
 local roninQuestTeleportList = {
     ["1"] = CFrame.new(-534.262878, -261.767517, -4447.94678, 1, 0, 0, 0, 1, 0, 0, 0, 1),
@@ -125,14 +227,13 @@ for name, cframe in pairs(roninQuestTeleportList) do
     end)
 end
 
-
-local vim = game:GetService("VirtualInputManager")
-local Players = game:GetService("Players")
-local plr = Players.LocalPlayer
-
+-- -----------------------------------------------------------------------------
+-- แท็บที่ห้า: Chants
+-- -----------------------------------------------------------------------------
 local chantTab = Window:NewTab("Chants")
 local chantSection = chantTab:NewSection("Chants")
 
+local vim = game:GetService("VirtualInputManager") 
 local chants = {
     "Teiwaz",
     "Othala",
@@ -144,7 +245,6 @@ local chants = {
     "Mannaz"
 }
 
-
 local TYPE_DELAY = 0.05 
 
 local function typeChat(message)
@@ -152,19 +252,14 @@ local function typeChat(message)
     local GeneralChannel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral") 
 
     if GeneralChannel then
-        
         GeneralChannel:SendAsync(message)
         print("สวด:", message)
     else
         warn("ไม่พบช่องแชท RBXGeneral หรือช่องแชทที่กำหนด ใช้ VirtualInputManager แทน")
-       
-        
-       
         vim:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
         task.wait(0.1) 
         vim:SendKeyEvent(false, Enum.KeyCode.Slash, false, game) 
 
-        
         for i = 1, #message do
             local char_to_type = message:sub(i, i)
             vim:SendTextInput(char_to_type)
@@ -172,8 +267,6 @@ local function typeChat(message)
         end
         
         task.wait(0.1)
-
-      
         vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
         task.wait(0.1) 
         vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game) 
@@ -186,60 +279,3 @@ for _, chant in ipairs(chants) do
         typeChat(chant)
     end)
 end
-
-local teleportPoints = {
-    CFrame.new(-676.028442, -34.4872017, 1824.49011),
-    CFrame.new(-202.499771, -21.7434502, 1475.51172),
-    CFrame.new(-681.279785, -34.9928169, 1556.7666),
-    CFrame.new(-237.836639, -35.0265427, 1272.09192),
-    CFrame.new(-209.397476, -34.9928093, 1918.94165),
-    CFrame.new(-697.179321, -34.9928131, 1276.71667),
-    CFrame.new(-585.617004, -34.9928017, 1918.23755),
-    CFrame.new(-537.18335, -34.9928093, 1819.58142),
-    CFrame.new(-313.208466, -34.184124, 1802.14001),
-    CFrame.new(58.4846497, -35.0372467, 1785.9054),
-    CFrame.new(73.7697754, -35.0372467, 1544.45923),
-    CFrame.new(-98.1705246, -35.2372437, 1558.54834),
-}
-
-local isFarming = false
-
-local function holdEOnItem(item)
-    print("กำลังโต้ตอบกับไอเท็ม:", item.Name)
-end
-
-local function startFarming()
-    task.spawn(function()
-        while isFarming do
-            for _, cframe in ipairs(teleportPoints) do
-                if not isFarming then break end
-                hrp.CFrame = cframe
-                task.wait(1)
-                
-                for _, item in ipairs(workspace:GetDescendants()) do
-                    if not isFarming then break end
-                    if item:IsA("Tool") and item:FindFirstChild("Handle") then
-                        if item.Name == "Box" or item.Name == "Barrel" then
-                            holdEOnItem(item)
-                            task.wait(0.1)
-                        end
-                    end
-                end
-                task.wait(2)
-            end
-            task.wait(3)
-        end
-        print("เรียบร้อย")
-    end)
-end
-
-Section:NewToggle("AutoFarm", "เปิด/ปิดระบบฟาร์ม", function(state)
-    if state then
-        print("เริ่มฟาร์ม")
-        isFarming = true
-        startFarming()
-    else
-        print("หยุดฟาร์ม")
-        isFarming = false
-    end
-end)                                                                                                                        
