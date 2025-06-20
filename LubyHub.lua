@@ -16,8 +16,8 @@ local autoFarmBoxTab = Window:NewTab("Auto Farm Box")
 local autoFarmBoxSection = autoFarmBoxTab:NewSection("Box & Barrel Farm")
 
 local isAutoFarmingBoxes = false 
-local E_HOLD_TIME = 2 
-local EXCLUDED_ITEM_INDEX = 6 
+local E_HOLD_TIME = 3 
+local EXCLUDED_ITEM_INDEX = 7 
 local EXCLUDED_ITEM = nil 
 
 local function holdE_AutoFarm(prompt)
@@ -279,3 +279,82 @@ for _, chant in ipairs(chants) do
         typeChat(chant)
     end)
 end
+
+-- -----------------------------------------------------------------------------
+-- แท็บที่หก: Special TP
+-- -----------------------------------------------------------------------------
+local specialTab = Window:NewTab("Auto Sell")
+local specialSection = specialTab:NewSection("Auto Sell Items")
+
+-- รายชื่อไอเทมที่สามารถขายได้
+local sellableItems = {
+    "Arrow",
+    "Mysterious Camera",
+    "Hamon Manual",
+    "Rokakaka",
+    "Stop Sign",
+    "Stone Mask",
+    "Haunted Sword",
+    "Spin Manual",
+    "Barrel",
+    "Bomu Bomu Devil Fruit",
+    "Mochi Mochi Devil Fruit",
+    "Bari Bari Devil Fruit"
+}
+
+-- ตัวแปรควบคุม Toggle
+local sellToggleRunning = false
+local sellToggleTask = nil
+
+-- ฟังก์ชันวาร์ป + คุยกับ NPC + ขายของ
+local function autoSellAndTalk()
+    sellToggleTask = task.spawn(function()
+        while sellToggleRunning do
+            -- 1. วาร์ปไปหาตัว Chxmei
+            local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
+            if npc and npc:FindFirstChildOfClass("ProximityPrompt") then
+                local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
+                hrp.CFrame = CFrame.new(-619.713013, -32.5270004, 1921.901)
+                task.wait(0.5)
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                task.wait(prompt.HoldDuration or 1.5)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                print("🗨️ คุยกับ Chxmei แล้ว")
+            else
+                warn("❌ ไม่พบ Chxmei หรือ Prompt")
+            end
+
+            -- 2. ตรวจสอบและขายของ
+            local Backpack = plr:FindFirstChild("Backpack")
+            if Backpack then
+                for _, itemName in ipairs(sellableItems) do
+                    local item = Backpack:FindFirstChild(itemName)
+                    if item then
+                        local args = {itemName}
+                        game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("SellItem"):FireServer(unpack(args))
+                        print("🪙 ขายไอเทม:", itemName)
+                        task.wait(0.25)
+                    end
+                end
+            end
+
+            task.wait(5) -- หน่วงเวลา
+        end
+    end)
+end
+
+-- ปุ่มเปิด/ปิดการขายของอัตโนมัติ
+specialSection:NewToggle(" Auto Sell Items", "เปิด/ปิดการขายของอัตโนมัติ + วาร์ป Chxmei", function(state)
+    if state then
+        sellToggleRunning = true
+        autoSellAndTalk()
+        print("✅ เริ่มขายของอัตโนมัติ")
+    else
+        sellToggleRunning = false
+        if sellToggleTask then
+            task.cancel(sellToggleTask)
+            sellToggleTask = nil
+        end
+        print("🛑 หยุดขายของอัตโนมัติ")
+    end
+end)
