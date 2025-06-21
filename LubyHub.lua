@@ -1,3 +1,4 @@
+-- Global variables and service initialization
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Luby Hub", "Synapse")
 
@@ -5,21 +6,44 @@ local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players") 
-local VirtualInputManager = game:GetService("VirtualInputManager") 
-local workspace = game:GetService("Workspace") 
+local Players = game:GetService("Players")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local workspace = game:GetService("Workspace")
 
--- -----------------------------------------------------------------------------
--- แท็บแรก: Auto Farm Box
--- -----------------------------------------------------------------------------
+---
+-- ### แท็บแรก: Auto Farm Box
+-- ---
 local autoFarmBoxTab = Window:NewTab("Auto Farm Box")
 local autoFarmBoxSection = autoFarmBoxTab:NewSection("Box & Barrel Farm")
 
-local isAutoFarmingBoxes = false 
-local E_HOLD_TIME = 3 
-local EXCLUDED_ITEM_INDEX = 7 
-local EXCLUDED_ITEM = nil 
+local isAutoFarmingBoxes = false
+local E_HOLD_TIME = 3
+local EXCLUDED_ITEM_INDEX = 7
+local EXCLUDED_ITEM = nil
 
+-- Function to set up character HRP tracking and restart AutoFarm on respawn
+local function setupCharacterAutoFarm()
+    if plr.Character then
+        hrp = plr.Character:WaitForChild("HumanoidRootPart", 5)
+    end
+
+    plr.CharacterAdded:Connect(function(char)
+        hrp = char:WaitForChild("HumanoidRootPart", 5)
+        print("📌 ตัวละครโหลดใหม่ อัปเดต HRP แล้ว")
+
+        -- Restart AutoFarm if it was enabled
+        if isAutoFarmingBoxes then
+            task.wait(1)
+            print("🔁 รีสตาร์ท AutoFarm หลังเกิดใหม่")
+            startAutoFarmBoxes()
+        end
+    end)
+end
+
+-- Initialize character setup
+setupCharacterAutoFarm()
+
+-- Function to hold 'E' key for interaction
 local function holdE_AutoFarm(prompt)
     if not prompt then return end
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -27,14 +51,20 @@ local function holdE_AutoFarm(prompt)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
+-- Function to collect an item via ProximityPrompt
 local function collectPrompt_AutoFarm(prompt)
     if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Parent then return end
+    if not hrp then
+        warn("❌ ไม่พบ HRP สำหรับการเก็บของ")
+        return
+    end
     hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
     task.wait(0.3)
     holdE_AutoFarm(prompt)
     print("✅ เก็บ:", prompt.Parent.Name)
 end
 
+-- Function to get all valid Box/Barrel prompts
 local function getAllValidPrompts_AutoFarm()
     local results = {}
     for _, v in ipairs(workspace:GetDescendants()) do
@@ -48,6 +78,7 @@ local function getAllValidPrompts_AutoFarm()
     return results
 end
 
+-- Function to collect items in the workspace (excluding a specific item)
 local function collectItemsInWorkspace_AutoFarm()
     if not workspace:FindFirstChild("Item") then return end
 
@@ -69,14 +100,20 @@ local function collectItemsInWorkspace_AutoFarm()
     end
 end
 
-local function startAutoFarmBoxes()
+-- Main function to start auto farming
+function startAutoFarmBoxes()
     task.spawn(function()
         while isAutoFarmingBoxes do
-            local prompts = getAllValidPrompts_AutoFarm()
+            if not hrp then
+                print("⚠️ รอ HRP ก่อนเริ่มฟาร์ม...")
+                task.wait(1)
+                continue
+            end
 
+            local prompts = getAllValidPrompts_AutoFarm()
             if #prompts > 0 then
                 for _, p in ipairs(prompts) do
-                    if not isAutoFarmingBoxes then break end 
+                    if not isAutoFarmingBoxes then break end
                     collectPrompt_AutoFarm(p)
                     task.wait(1.2)
                 end
@@ -84,28 +121,123 @@ local function startAutoFarmBoxes()
                 print("📭 ไม่พบกล่องหรือบาเรล รอสแกนใหม่...")
             end
 
-            collectItemsInWorkspace_AutoFarm() 
-
+            collectItemsInWorkspace_AutoFarm()
             task.wait(2.5)
         end
-        print("หยุด Auto Farm กล่องและบาเรลแล้ว")
+        print("🚫 หยุด Auto Farm กล่องและบาเรลแล้ว")
     end)
 end
 
+-- Toggle for Auto Farm Boxes & Barrels
 autoFarmBoxSection:NewToggle("Auto Farm Boxes & Barrels", "เปิด/ปิดระบบฟาร์มกล่องและบาเรลอัตโนมัติ", function(state)
     isAutoFarmingBoxes = state
     if isAutoFarmingBoxes then
-        print("เริ่ม Auto Farm กล่องและบาเรล")
+        print("✅ เริ่ม Auto Farm กล่องและบาเรล")
         startAutoFarmBoxes()
     else
-        print("หยุด Auto Farm กล่องและบาเรล")
+        print("⛔ หยุด Auto Farm กล่องและบาเรล")
     end
 end)
 
--- -----------------------------------------------------------------------------
--- แท็บที่สอง: Teleport Map
--- -----------------------------------------------------------------------------
-local TeleportMapTab = Window:NewTab("Teleport Map") 
+---
+-- ### แท็บที่สอง: Auto Sell
+-- ---
+local autoSellTab = Window:NewTab("Auto Sell")
+local autoSellSection = autoSellTab:NewSection("Auto Sell Items")
+
+-- List of sellable items
+local sellableItems = {
+    "Arrow",
+    "Mysterious Camera",
+    "Hamon Manual",
+    "Rokakaka",
+    "Stop Sign",
+    "Stone Mask",
+    "Haunted Sword",
+    "Spin Manual",
+    "Barrel",
+    "Bomu Bomu Devil Fruit",
+    "Mochi Mochi Devil Fruit",
+    "Bari Bari Devil Fruit"
+}
+
+-- Toggle control variables
+local sellToggleRunning = false
+local sellToggleTask = nil
+
+-- Function to rapidly sell items in the backpack
+local function autoSellBackpackFast()
+    local backpack = plr:FindFirstChild("Backpack")
+    if not backpack then return end
+
+    local sellRemote = game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("SellItem")
+
+    for _, itemName in ipairs(sellableItems) do
+        -- Count items with the same name in Backpack
+        local count = 0
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item.Name == itemName then
+                count = count + 1
+            end
+        end
+
+        -- Fire sell command for each item rapidly
+        if count > 0 then
+            for i = 1, count do
+                sellRemote:FireServer(itemName)
+                print("🪙 ขายไอเทม:", itemName, "(" .. i .. "/" .. count .. ")")
+                task.wait(0.05) -- Small delay to prevent issues
+            end
+        end
+    end
+end
+
+-- Function to warp, talk to NPC, and sell items
+local function autoSellAndTalk()
+    sellToggleTask = task.spawn(function()
+        while sellToggleRunning do
+            -- 1. Warp to Chxmei
+            local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
+            if npc and npc:FindFirstChildOfClass("ProximityPrompt") then
+                local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
+                hrp.CFrame = CFrame.new(-619.713013, -32.5270004, 1921.901)
+                task.wait(0.5)
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                task.wait(prompt.HoldDuration or 1.5)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                print("🗨️ คุยกับ Chxmei แล้ว")
+            else
+                warn("❌ ไม่พบ Chxmei หรือ Prompt")
+            end
+
+            -- 2. Rapidly sell items
+            autoSellBackpackFast()
+
+            task.wait(5) -- Delay before looping again
+        end
+    end)
+end
+
+-- Toggle button for auto-selling
+autoSellSection:NewToggle(" Auto Sell Items", "เปิด/ปิดการขายของอัตโนมัติ + วาร์ป Chxmei", function(state)
+    if state then
+        sellToggleRunning = true
+        autoSellAndTalk()
+        print("✅ เริ่มขายของอัตโนมัติ")
+    else
+        sellToggleRunning = false
+        if sellToggleTask then
+            task.cancel(sellToggleTask)
+            sellToggleTask = nil
+        end
+        print("🛑 หยุดขายของอัตโนมัติ")
+    end
+end)
+
+---
+-- ### แท็บที่สาม: Teleport Map
+-- ---
+local TeleportMapTab = Window:NewTab("Teleport Map")
 local TeleportSection = TeleportMapTab:NewSection("Teleport Map")
 
 local teleportList = {
@@ -137,6 +269,7 @@ local teleportList = {
     ["ถ้วย"] = CFrame.new(3813.12231, -157.168457, 4539.01416, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 }
 
+-- Create buttons for each teleport location
 for name, cframe in pairs(teleportList) do
     TeleportSection:NewButton("Teleport: " .. name, "Teleport " .. name, function()
         hrp.CFrame = cframe
@@ -144,10 +277,10 @@ for name, cframe in pairs(teleportList) do
     end)
 end
 
--- -----------------------------------------------------------------------------
--- แท็บที่สาม: Teleport NPC
--- -----------------------------------------------------------------------------
-local NPCTeleportTab = Window:NewTab("Teleport NPC") 
+---
+-- ### แท็บที่สี่: Teleport NPC
+-- ---
+local NPCTeleportTab = Window:NewTab("Teleport NPC")
 local NPCTeleportSection = NPCTeleportTab:NewSection("Teleport NPC")
 
 local npcTeleportList = {
@@ -196,6 +329,7 @@ local npcTeleportList = {
     Baiken = CFrame.new(-446.574921, -33.3681908, 1818.41248, 0.105164446, 0.187645465, 0.97659111, 0.0408497751, 0.980392337, -0.192774728, -0.993615866, 0.060166575, 0.0954371542)
 }
 
+-- Create buttons for each NPC teleport location
 for name, cframe in pairs(npcTeleportList) do
     NPCTeleportSection:NewButton("Teleport NPC: " .. name, "Teleport to " .. name, function()
         hrp.CFrame = cframe
@@ -203,10 +337,10 @@ for name, cframe in pairs(npcTeleportList) do
     end)
 end
 
--- -----------------------------------------------------------------------------
--- แท็บที่สี่: Ronin Quest
--- -----------------------------------------------------------------------------
-local RoninQuestTab = Window:NewTab("Ronin Quest") 
+---
+-- ### แท็บที่ห้า: Ronin Quest
+-- ---
+local RoninQuestTab = Window:NewTab("Ronin Quest")
 local RoninQuestTeleportSection = RoninQuestTab:NewSection("Ronin QuestV2")
 
 local roninQuestTeleportList = {
@@ -220,6 +354,7 @@ local roninQuestTeleportList = {
     ["8"] = CFrame.new(-6965.54248, -29.1699066, 1101.05481, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 }
 
+-- Create buttons for each Ronin Quest teleport location
 for name, cframe in pairs(roninQuestTeleportList) do
     RoninQuestTeleportSection:NewButton("Teleport: " .. name, "Teleport " .. name, function()
         hrp.CFrame = cframe
@@ -227,13 +362,13 @@ for name, cframe in pairs(roninQuestTeleportList) do
     end)
 end
 
--- -----------------------------------------------------------------------------
--- แท็บที่ห้า: Chants
--- -----------------------------------------------------------------------------
+---
+-- ### แท็บที่หก: Chants
+-- ---
 local chantTab = Window:NewTab("Chants")
 local chantSection = chantTab:NewSection("Chants")
 
-local vim = game:GetService("VirtualInputManager") 
+local vim = game:GetService("VirtualInputManager")
 local chants = {
     "Teiwaz",
     "Othala",
@@ -245,11 +380,12 @@ local chants = {
     "Mannaz"
 }
 
-local TYPE_DELAY = 0.05 
+local TYPE_DELAY = 0.05
 
+-- Function to type a message into chat
 local function typeChat(message)
     local TextChatService = game:GetService("TextChatService")
-    local GeneralChannel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral") 
+    local GeneralChannel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral")
 
     if GeneralChannel then
         GeneralChannel:SendAsync(message)
@@ -257,104 +393,26 @@ local function typeChat(message)
     else
         warn("ไม่พบช่องแชท RBXGeneral หรือช่องแชทที่กำหนด ใช้ VirtualInputManager แทน")
         vim:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
-        task.wait(0.1) 
-        vim:SendKeyEvent(false, Enum.KeyCode.Slash, false, game) 
+        task.wait(0.1)
+        vim:SendKeyEvent(false, Enum.KeyCode.Slash, false, game)
 
         for i = 1, #message do
             local char_to_type = message:sub(i, i)
             vim:SendTextInput(char_to_type)
-            task.wait(TYPE_DELAY) 
+            task.wait(TYPE_DELAY)
         end
-        
+
         task.wait(0.1)
         vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
-        task.wait(0.1) 
-        vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game) 
+        task.wait(0.1)
+        vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
         print("สวด (ผ่าน VirtualInputManager ทีละตัว):", message)
     end
 end
 
+-- Create buttons for each chant
 for _, chant in ipairs(chants) do
     chantSection:NewButton("Chants: " .. chant, "พิมพ์ " .. chant .. " ลงแชท", function()
         typeChat(chant)
     end)
 end
-
--- -----------------------------------------------------------------------------
--- แท็บที่หก: Special TP
--- -----------------------------------------------------------------------------
-local specialTab = Window:NewTab("Auto Sell")
-local specialSection = specialTab:NewSection("Auto Sell Items")
-
--- รายชื่อไอเทมที่สามารถขายได้
-local sellableItems = {
-    "Arrow",
-    "Mysterious Camera",
-    "Hamon Manual",
-    "Rokakaka",
-    "Stop Sign",
-    "Stone Mask",
-    "Haunted Sword",
-    "Spin Manual",
-    "Barrel",
-    "Bomu Bomu Devil Fruit",
-    "Mochi Mochi Devil Fruit",
-    "Bari Bari Devil Fruit"
-}
-
--- ตัวแปรควบคุม Toggle
-local sellToggleRunning = false
-local sellToggleTask = nil
-
--- ฟังก์ชันวาร์ป + คุยกับ NPC + ขายของ
-local function autoSellAndTalk()
-    sellToggleTask = task.spawn(function()
-        while sellToggleRunning do
-            -- 1. วาร์ปไปหาตัว Chxmei
-            local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
-            if npc and npc:FindFirstChildOfClass("ProximityPrompt") then
-                local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
-                hrp.CFrame = CFrame.new(-619.713013, -32.5270004, 1921.901)
-                task.wait(0.5)
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                task.wait(prompt.HoldDuration or 1.5)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                print("🗨️ คุยกับ Chxmei แล้ว")
-            else
-                warn("❌ ไม่พบ Chxmei หรือ Prompt")
-            end
-
-            -- 2. ตรวจสอบและขายของ
-            local Backpack = plr:FindFirstChild("Backpack")
-            if Backpack then
-                for _, itemName in ipairs(sellableItems) do
-                    local item = Backpack:FindFirstChild(itemName)
-                    if item then
-                        local args = {itemName}
-                        game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("SellItem"):FireServer(unpack(args))
-                        print("🪙 ขายไอเทม:", itemName)
-                        task.wait(0.25)
-                    end
-                end
-            end
-
-            task.wait(5) -- หน่วงเวลา
-        end
-    end)
-end
-
--- ปุ่มเปิด/ปิดการขายของอัตโนมัติ
-specialSection:NewToggle(" Auto Sell Items", "เปิด/ปิดการขายของอัตโนมัติ + วาร์ป Chxmei", function(state)
-    if state then
-        sellToggleRunning = true
-        autoSellAndTalk()
-        print("✅ เริ่มขายของอัตโนมัติ")
-    else
-        sellToggleRunning = false
-        if sellToggleTask then
-            task.cancel(sellToggleTask)
-            sellToggleTask = nil
-        end
-        print("🛑 หยุดขายของอัตโนมัติ")
-    end
-end)
