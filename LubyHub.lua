@@ -1,4 +1,3 @@
--- Global variables and service initialization
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Luby Hub By zazq_io", "Synapse")
 
@@ -10,9 +9,7 @@ local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local workspace = game:GetService("Workspace")
 
----
--- ### แท็บแรก: Auto Farm Box
--- ---
+
 local autoFarmBoxTab = Window:NewTab("Auto Farm Box")
 local autoFarmBoxSection = autoFarmBoxTab:NewSection("Box & Barrel Farm")
 
@@ -21,7 +18,7 @@ local E_HOLD_TIME = 3
 local EXCLUDED_ITEM_INDEX = 7
 local EXCLUDED_ITEM = nil
 
--- Function to set up character HRP tracking and restart AutoFarm on respawn
+
 local function setupCharacterAutoFarm()
     if plr.Character then
         hrp = plr.Character:WaitForChild("HumanoidRootPart", 5)
@@ -29,12 +26,10 @@ local function setupCharacterAutoFarm()
 
     plr.CharacterAdded:Connect(function(char)
         hrp = char:WaitForChild("HumanoidRootPart", 5)
-        print("📌 ตัวละครโหลดใหม่ อัปเดต HRP แล้ว")
 
-        -- Restart AutoFarm if it was enabled
+            
         if isAutoFarmingBoxes then
             task.wait(1)
-            print("🔁 รีสตาร์ท AutoFarm หลังเกิดใหม่")
             startAutoFarmBoxes()
         end
     end)
@@ -416,3 +411,69 @@ for _, chant in ipairs(chants) do
         typeChat(chant)
     end)
 end
+
+
+local holdETeleportTab = Window:NewTab("Auto random skin")
+local holdETeleportSection = holdETeleportTab:NewSection("Auto random skin")
+
+local bodyPos = nil
+local isHoldingE = false
+local targetPos = Vector3.new(-193.988007, -32.0089989 + 3, 1464.33105)
+
+local function startHoldingE()
+    if isHoldingE then return end
+    isHoldingE = true
+    task.spawn(function()
+        while isHoldingE do
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            task.wait(1)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+            task.wait(0.1)
+        end
+    end)
+end
+
+local function stopHoldingE()
+    if not isHoldingE then return end
+    isHoldingE = false
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+local function lockPosition()
+    if bodyPos then return end
+    bodyPos = Instance.new("BodyPosition")
+    bodyPos.Position = targetPos
+    bodyPos.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bodyPos.P = 1e4
+    bodyPos.Parent = hrp
+end
+
+local function unlockPosition()
+    if bodyPos then
+        bodyPos:Destroy()
+        bodyPos = nil
+    end
+end
+
+local function teleportLockAndHoldE()
+    hrp.CFrame = CFrame.new(targetPos)
+    task.wait(0.3)
+    lockPosition()
+    startHoldingE()
+end
+
+local function releaseLockAndStopE()
+    unlockPosition()
+    stopHoldingE()
+end
+
+holdETeleportSection:NewToggle("Auto random skin", " E ", function(state)
+    if state then
+        
+        teleportLockAndHoldE()
+    else
+        
+        releaseLockAndStopE()
+    end
+end)
+
