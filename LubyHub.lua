@@ -1,6 +1,6 @@
 -- Global variables and service initialization
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Luby Hub", "Synapse")
+local Window = Library.CreateLib("Luby Hub By zazq_io", "Synapse")
 
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
