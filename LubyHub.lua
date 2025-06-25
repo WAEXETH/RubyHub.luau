@@ -1,5 +1,6 @@
+-- Global variables and service initialization
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Luby Hub By zazq_io", "Synapse")
+local Window = Library.CreateLib("Luby Hub", "Synapse")
 
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
@@ -9,7 +10,9 @@ local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local workspace = game:GetService("Workspace")
 
-
+---
+-- ### แท็บแรก: Auto Farm Box
+---
 local autoFarmBoxTab = Window:NewTab("Auto Farm Box")
 local autoFarmBoxSection = autoFarmBoxTab:NewSection("Box & Barrel Farm")
 
@@ -18,7 +21,7 @@ local E_HOLD_TIME = 3
 local EXCLUDED_ITEM_INDEX = 7
 local EXCLUDED_ITEM = nil
 
-
+-- Function to set up character HRP tracking and restart AutoFarm on respawn
 local function setupCharacterAutoFarm()
     if plr.Character then
         hrp = plr.Character:WaitForChild("HumanoidRootPart", 5)
@@ -27,7 +30,7 @@ local function setupCharacterAutoFarm()
     plr.CharacterAdded:Connect(function(char)
         hrp = char:WaitForChild("HumanoidRootPart", 5)
 
-            
+        -- Restart AutoFarm if it was enabled
         if isAutoFarmingBoxes then
             task.wait(1)
             startAutoFarmBoxes()
@@ -56,7 +59,6 @@ local function collectPrompt_AutoFarm(prompt)
     hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
     task.wait(0.3)
     holdE_AutoFarm(prompt)
-    print("✅ เก็บ:", prompt.Parent.Name)
 end
 
 -- Function to get all valid Box/Barrel prompts
@@ -113,13 +115,12 @@ function startAutoFarmBoxes()
                     task.wait(1.2)
                 end
             else
-                print("📭 ไม่พบกล่องหรือบาเรล รอสแกนใหม่...")
+                -- No prompts found, could add a message or short wait here
             end
 
             collectItemsInWorkspace_AutoFarm()
             task.wait(2.5)
         end
-        print("🚫 หยุด Auto Farm กล่องและบาเรลแล้ว")
     end)
 end
 
@@ -127,16 +128,15 @@ end
 autoFarmBoxSection:NewToggle("Auto Farm Boxes & Barrels", "เปิด/ปิดระบบฟาร์มกล่องและบาเรลอัตโนมัติ", function(state)
     isAutoFarmingBoxes = state
     if isAutoFarmingBoxes then
-        print("✅ เริ่ม Auto Farm กล่องและบาเรล")
         startAutoFarmBoxes()
     else
-        print("⛔ หยุด Auto Farm กล่องและบาเรล")
+        -- Stop auto-farming if needed, current loop handles it
     end
 end)
 
 ---
 -- ### แท็บที่สอง: Auto Sell
--- ---
+---
 local autoSellTab = Window:NewTab("Auto Sell")
 local autoSellSection = autoSellTab:NewSection("Auto Sell Items")
 
@@ -180,7 +180,6 @@ local function autoSellBackpackFast()
         if count > 0 then
             for i = 1, count do
                 sellRemote:FireServer(itemName)
-                print("🪙 ขายไอเทม:", itemName, "(" .. i .. "/" .. count .. ")")
                 task.wait(0.05) -- Small delay to prevent issues
             end
         end
@@ -218,20 +217,18 @@ autoSellSection:NewToggle(" Auto Sell Items", "เปิด/ปิดการ�
     if state then
         sellToggleRunning = true
         autoSellAndTalk()
-        print("✅ เริ่มขายของอัตโนมัติ")
     else
         sellToggleRunning = false
         if sellToggleTask then
             task.cancel(sellToggleTask)
             sellToggleTask = nil
         end
-        print("🛑 หยุดขายของอัตโนมัติ")
     end
 end)
 
 ---
 -- ### แท็บที่สาม: Teleport Map
--- ---
+---
 local TeleportMapTab = Window:NewTab("Teleport Map")
 local TeleportSection = TeleportMapTab:NewSection("Teleport Map")
 
@@ -268,13 +265,12 @@ local teleportList = {
 for name, cframe in pairs(teleportList) do
     TeleportSection:NewButton("Teleport: " .. name, "Teleport " .. name, function()
         hrp.CFrame = cframe
-        print("วาร์ปไปยัง:", name)
     end)
 end
 
 ---
 -- ### แท็บที่สี่: Teleport NPC
--- ---
+---
 local NPCTeleportTab = Window:NewTab("Teleport NPC")
 local NPCTeleportSection = NPCTeleportTab:NewSection("Teleport NPC")
 
@@ -328,13 +324,12 @@ local npcTeleportList = {
 for name, cframe in pairs(npcTeleportList) do
     NPCTeleportSection:NewButton("Teleport NPC: " .. name, "Teleport to " .. name, function()
         hrp.CFrame = cframe
-        print("วาร์ปไปยัง NPC:", name)
     end)
 end
 
 ---
 -- ### แท็บที่ห้า: Ronin Quest
--- ---
+---
 local RoninQuestTab = Window:NewTab("Ronin Quest")
 local RoninQuestTeleportSection = RoninQuestTab:NewSection("Ronin QuestV2")
 
@@ -353,13 +348,12 @@ local roninQuestTeleportList = {
 for name, cframe in pairs(roninQuestTeleportList) do
     RoninQuestTeleportSection:NewButton("Teleport: " .. name, "Teleport " .. name, function()
         hrp.CFrame = cframe
-        print("Teleport:", name)
     end)
 end
 
 ---
 -- ### แท็บที่หก: Chants
--- ---
+---
 local chantTab = Window:NewTab("Chants")
 local chantSection = chantTab:NewSection("Chants")
 
@@ -384,7 +378,6 @@ local function typeChat(message)
 
     if GeneralChannel then
         GeneralChannel:SendAsync(message)
-        print("สวด:", message)
     else
         warn("ไม่พบช่องแชท RBXGeneral หรือช่องแชทที่กำหนด ใช้ VirtualInputManager แทน")
         vim:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
@@ -401,7 +394,6 @@ local function typeChat(message)
         vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
         task.wait(0.1)
         vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-        print("สวด (ผ่าน VirtualInputManager ทีละตัว):", message)
     end
 end
 
@@ -412,7 +404,102 @@ for _, chant in ipairs(chants) do
     end)
 end
 
+---
+-- ### แท็บที่เจ็ด: Auto Dummy
+---
+local Tab = Window:NewTab("Auto Dummy")
+local Section = Tab:NewSection("Auto Attack Settings")
 
+local dummyTypes = {
+    "Dummy",
+    "Attacking Dummy",
+    "Blocking Dummy",
+    "Counter Dummy"
+}
+
+local selectedDummy = "Dummy"
+local attacking = false
+local attackLoop = nil
+
+local offsetX = 3
+local offsetY = 0
+local maxAttackDistance = 10000        -- ระยะตีสูงสุด (stud)
+local attackCooldown = 0.1          -- วินาทีระหว่างโจมตี
+
+Section:NewDropdown("Dummy", "ตอก Dummy", dummyTypes, function(selected)
+    selectedDummy = selected
+end)
+
+local function getNearestDummy()
+    local nearestDummy = nil
+    local nearestDist = math.huge
+
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj.Name == selectedDummy and obj:FindFirstChild("HumanoidRootPart") then
+            local dummyHRP = obj.HumanoidRootPart
+            local dist = (hrp.Position - dummyHRP.Position).Magnitude
+            if dist < nearestDist and dist <= maxAttackDistance then
+                nearestDist = dist
+                nearestDummy = obj
+            end
+        end
+    end
+
+    return nearestDummy, nearestDist
+end
+
+local function attackDummy(dummyModel)
+    local dummyHRP = dummyModel.HumanoidRootPart
+    local dummyName = dummyModel.Name
+
+    if dummyName == "Attacking Dummy" then
+        local lookVector = dummyHRP.CFrame.LookVector
+        local offset = Vector3.new(lookVector.X * offsetX, offsetY, lookVector.Z * offsetX)
+        hrp.CFrame = dummyHRP.CFrame * CFrame.new(offset)
+    else
+        hrp.CFrame = dummyHRP.CFrame * CFrame.new(0, 0, 2)
+    end
+
+    -- โจมตีจำลองคลิกซ้าย
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+end
+
+Section:NewToggle("Auto Attack", "ตีดัมมี่อัตโนมัติ", function(state)
+    attacking = state
+
+    if attacking then
+        attackLoop = task.spawn(function()
+            while attacking do
+                char = plr.Character or plr.CharacterAdded:Wait()
+                hrp = char:WaitForChild("HumanoidRootPart")
+
+                local nearest, dist = getNearestDummy()
+                if nearest then
+                    if dist > 5 then
+                        -- ถ้าไกลเกิน 5 stud ให้รอสั้นๆก่อนวาร์ป (ถ้าชอบให้เดินแทน วาร์ปเปลี่ยนตรงนี้ได้)
+                        hrp.CFrame = nearest.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                        task.wait(0.3)
+                    end
+                    attackDummy(nearest)
+                    task.wait(attackCooldown)
+                else
+                    task.wait(2)
+                end
+            end
+        end)
+    else
+        if attackLoop then
+            task.cancel(attackLoop)
+            attackLoop = nil
+        end
+    end
+end)
+
+---
+-- ### แท็บที่แปด: Auto Random Skin
+---
 local holdETeleportTab = Window:NewTab("Auto random skin")
 local holdETeleportSection = holdETeleportTab:NewSection("Auto random skin")
 
@@ -469,11 +556,59 @@ end
 
 holdETeleportSection:NewToggle("Auto random skin", " E ", function(state)
     if state then
-        
         teleportLockAndHoldE()
     else
-        
         releaseLockAndStopE()
     end
 end)
 
+---
+-- ### แท็บที่เก้า: Auto Skill
+---
+local skillTab = Window:NewTab("Auto Use Skills")
+local skillSection = skillTab:NewSection("Auto Skill ")
+
+local skillKeys = {
+    Enum.KeyCode.E,
+    Enum.KeyCode.R,
+    Enum.KeyCode.T,
+    Enum.KeyCode.Y,
+    Enum.KeyCode.G,
+    Enum.KeyCode.H,
+    Enum.KeyCode.Q,
+    Enum.KeyCode.Z,
+    Enum.KeyCode.X,
+    Enum.KeyCode.V,
+    Enum.KeyCode.B
+}
+
+local autoSkillEnabled = false
+local skillCooldown = 1.0
+local skillLoop = nil
+
+skillSection:NewToggle("Auto Use Skills", "เปิด/ปิด", function(state)
+    autoSkillEnabled = state
+
+    if autoSkillEnabled then
+        skillLoop = task.spawn(function()
+            while autoSkillEnabled do
+                for _, key in ipairs(skillKeys) do
+                    VirtualInputManager:SendKeyEvent(true, key, false, game)
+                    task.wait(0.03)
+                    VirtualInputManager:SendKeyEvent(false, key, false, game)
+                    task.wait(0.05)
+                end
+                task.wait(skillCooldown)
+            end
+        end)
+    else
+        if skillLoop then
+            task.cancel(skillLoop)
+            skillLoop = nil
+        end
+    end
+end)
+
+skillSection:NewSlider("Skill Cooldown", "........", 5, 0.1, 1.0, function(val)
+    skillCooldown = val
+end)
