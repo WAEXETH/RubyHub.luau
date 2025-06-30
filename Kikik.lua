@@ -1,46 +1,28 @@
---[[
-    Luby Hub BY Zazq_io
-    Description: Script for game automation including Auto Farm, ESP, and Auto Skill.
-]]
-
---================================================================
--- LIBRARY & UI INITIALIZATION
---================================================================
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("Luby Hub BY Zazq_io", "Midnight")
 
--- Tabs and Sections
 local Tab = Window:NewTab("Auto Kill")
 local Section = Tab:NewSection("Auto Kill")
 local espSection = Tab:NewSection("ESP")
 
---================================================================
--- VARIABLE DECLARATIONS
---================================================================
--- Services
 local Players = game:GetService("Players")
 
--- Local Player
+
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 local backpack = player:WaitForChild("Backpack")
 
--- Workspace
+
 local liveFolder = workspace:WaitForChild("Live")
 
--- State Variables
+
 local isAutoFarmActive = false
-local isAutoSkillActive = false -- This variable is now locally controlled in the Toggle function
+local isAutoSkillActive = false 
 local isEspActive = false
 local isAttacking = false
 local highlights = {}
 
---================================================================
--- CORE FUNCTIONS
---================================================================
-
--- Function to use a specific skill by tool name
 local function useSkill(toolName)
     local tool = backpack:FindFirstChild(toolName)
     if tool then
@@ -53,7 +35,7 @@ local function useSkill(toolName)
     end
 end
 
--- Function to perform a normal attack
+
 local function normalAttack()
     local args = {{
         Goal = "LeftClick"
@@ -61,7 +43,7 @@ local function normalAttack()
     character:WaitForChild("Communicate"):FireServer(unpack(args))
 end
 
--- Function to find the closest enemy within a given distance
+
 local function getClosestEnemy(maxDistance)
     local closestEnemy = nil
     local closestDist = maxDistance or 10000
@@ -84,9 +66,7 @@ local function getClosestEnemy(maxDistance)
     return closestEnemy
 end
 
---================================================================
--- FEATURE: AUTO FARM
---================================================================
+
 local function autoFarmLoop()
     isAttacking = true
     local target = nil
@@ -101,7 +81,7 @@ local function autoFarmLoop()
             local offsetPosition = enemyHRP.CFrame * CFrame.new(0, 0, 5)
             hrp.CFrame = CFrame.lookAt(offsetPosition.Position, enemyHRP.Position)
 
-            -- Attack Combo
+            
             normalAttack()
             useSkill("Normal Punch")
             useSkill("Consecutive Punches")
@@ -115,11 +95,7 @@ local function autoFarmLoop()
     isAttacking = false
 end
 
---================================================================
--- FEATURE: ESP (Extrasensory Perception)
---================================================================
 
--- Function to add a name tag to a character
 local function addNameTag(char, plr)
     if char and plr and char:FindFirstChild("Head") and not char:FindFirstChild("NameTag") then
         local billboard = Instance.new("BillboardGui")
@@ -142,12 +118,12 @@ local function addNameTag(char, plr)
     end
 end
 
--- Function to create highlight and name tag for a player
+
 local function createHighlightAndNameTag(plr)
     if plr.Character then
         local char = plr.Character
 
-        -- Clean up old instances if they exist
+        
         if highlights[plr] then
             if highlights[plr].Highlight and highlights[plr].Highlight.Parent then
                 highlights[plr].Highlight:Destroy()
@@ -157,17 +133,17 @@ local function createHighlightAndNameTag(plr)
             end
         end
 
-        -- Create new Highlight
+        
         local hl = Instance.new("Highlight")
         hl.FillColor = Color3.new(1, 0, 0)
         hl.OutlineColor = Color3.new(1, 1, 1)
         hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         hl.Parent = char
 
-        -- Create new NameTag
+        
         addNameTag(char, plr)
 
-        -- Store references
+        
         highlights[plr] = {
             Highlight = hl,
             NameTag = char:FindFirstChild("NameTag")
@@ -175,17 +151,17 @@ local function createHighlightAndNameTag(plr)
     end
 end
 
--- Function to handle player respawning for ESP
+
 local function setupPlayerESP(plr)
     plr.CharacterAdded:Connect(function(char)
-        task.wait(1) -- Wait for character to fully load
+        task.wait(1) 
         if isEspActive then
             createHighlightAndNameTag(plr)
         end
     end)
 end
 
--- Main toggle function for ESP
+
 local function toggleESP(state)
     isEspActive = state
     if isEspActive then
@@ -194,7 +170,7 @@ local function toggleESP(state)
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= player then
                 createHighlightAndNameTag(plr)
-                setupPlayerESP(plr) -- Setup for future spawns
+                setupPlayerESP(plr)
             end
         end
 
@@ -213,14 +189,9 @@ local function toggleESP(state)
                 data.NameTag:Destroy()
             end
         end
-        highlights = {} -- Clear the table
+        highlights = {}
     end
 end
-
-
---================================================================
--- UI ELEMENT CREATION
---================================================================
 
 
 Section:NewToggle("Auto Farm", "ตีศัตรูตัวเดิมจนตายก่อนเปลี่ยนเป้า", function(state)
@@ -262,6 +233,6 @@ Section:NewToggle("Auto Skill All", "ใช้ทุกสกิลใน Backpa
 end)
 
 
-espSection:NewToggle("ESP", "แสดงกรอบและชื่อผู้เล่นอื่น", function(state)
+espSection:NewToggle("ESP", "ESP", function(state)
     toggleESP(state)
 end)
