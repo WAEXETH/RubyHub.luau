@@ -1,272 +1,259 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Luby Hub BY Zazq_io", "Synapse")
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "Luby Hub By zazq_io & tj_150719",
+	Icon = "package",
+	LoadingTitle = "Load...",
+	LoadingSubtitle = "wait...",
+	ShowText = "เปิดเมนู",
+	Theme = "Default",
+	ToggleUIKeybind = "V",
+	KeySystem = false
+})
+
+
+local autoFarmTab = Window:CreateTab("Auto Farm", "package")
+local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
+
+
+local autoFarmSection = autoFarmTab:CreateSection("Farm")
+local autoSellSection = autoSellTab:CreateSection("Sell")
+
 
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local workspace = game:GetService("Workspace")
-
-local autoFarmBoxTab = Window:NewTab("Auto Farm Box")
-local autoFarmBoxSection = autoFarmBoxTab:NewSection("Box & Barrel Farm")
 
 local isAutoFarmingBoxes = false
 local E_HOLD_TIME = 3
 local EXCLUDED_ITEM_INDEX = 7
 local EXCLUDED_ITEM = nil
 
+
 local function setupCharacterAutoFarm()
-    if plr.Character then
-        hrp = plr.Character:WaitForChild("HumanoidRootPart", 5)
-    end
+	if plr.Character then
+		hrp = plr.Character:WaitForChild("HumanoidRootPart", 5)
+	end
 
-    plr.CharacterAdded:Connect(function(char)
-        hrp = char:WaitForChild("HumanoidRootPart", 5)
-       
-
-        if isAutoFarmingBoxes then
-            task.wait(1)
-           
-            startAutoFarmBoxes()
-        end
-    end)
+	plr.CharacterAdded:Connect(function(char)
+		hrp = char:WaitForChild("HumanoidRootPart", 5)
+		if isAutoFarmingBoxes then
+			task.wait(1)
+			startAutoFarmBoxes()
+		end
+	end)
 end
-
 setupCharacterAutoFarm()
 
+
 local function holdE_AutoFarm(prompt)
-    if not prompt then return end
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    task.wait(prompt.HoldDuration or E_HOLD_TIME)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+	if not prompt then return end
+	VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+	task.wait(prompt.HoldDuration or E_HOLD_TIME)
+	VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
--- Function to collect an item via ProximityPrompt
 local function collectPrompt_AutoFarm(prompt)
-    if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Parent then return end
-    if not hrp then
-        warn("❌ ไม่พบ HRP สำหรับการเก็บของ")
-        return
-    end
-    hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
-    task.wait(0.3)
-    holdE_AutoFarm(prompt)
-    
+	if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Parent then return end
+	if not hrp then return end
+	hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
+	task.wait(0.3)
+	holdE_AutoFarm(prompt)
 end
 
--- Function to get all valid Box/Barrel prompts
 local function getAllValidPrompts_AutoFarm()
-    local results = {}
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ProximityPrompt") and v.Parent and v.Enabled then
-            local name = v.Parent.Name
-            if name == "Box" or name == "Barrel" then
-                table.insert(results, v)
-            end
-        end
-    end
-    return results
+	local results = {}
+	for _, v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("ProximityPrompt") and v.Parent and v.Enabled then
+			local name = v.Parent.Name
+			if name == "Box" or name == "Barrel" then
+				table.insert(results, v)
+			end
+		end
+	end
+	return results
 end
 
--- Function to collect items in the workspace (excluding a specific item)
 local function collectItemsInWorkspace_AutoFarm()
-    if not workspace:FindFirstChild("Item") then return end
-
-    if EXCLUDED_ITEM == nil then
-        local children = workspace.Item:GetChildren()
-        if #children >= EXCLUDED_ITEM_INDEX then
-            EXCLUDED_ITEM = children[EXCLUDED_ITEM_INDEX]
-        end
-    end
-
-    for _, item in ipairs(workspace.Item:GetChildren()) do
-        if item and item ~= EXCLUDED_ITEM then
-            local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-            if prompt then
-                collectPrompt_AutoFarm(prompt)
-                task.wait(1)
-            end
-        end
-    end
+	if not workspace:FindFirstChild("Item") then return end
+	if EXCLUDED_ITEM == nil then
+		local children = workspace.Item:GetChildren()
+		if #children >= EXCLUDED_ITEM_INDEX then
+			EXCLUDED_ITEM = children[EXCLUDED_ITEM_INDEX]
+		end
+	end
+	for _, item in ipairs(workspace.Item:GetChildren()) do
+		if item and item ~= EXCLUDED_ITEM then
+			local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+			if prompt then
+				collectPrompt_AutoFarm(prompt)
+				task.wait(1)
+			end
+		end
+	end
 end
 
--- Main function to start auto farming
 function startAutoFarmBoxes()
-    task.spawn(function()
-        while isAutoFarmingBoxes do
-            if not hrp then
-                print("⚠️ รอ HRP ก่อนเริ่มฟาร์ม...")
-                task.wait(1)
-            else
-                local prompts = getAllValidPrompts_AutoFarm()
-                if #prompts > 0 then
-                    for _, p in ipairs(prompts) do
-                        if not isAutoFarmingBoxes then break end
-                        collectPrompt_AutoFarm(p)
-                        task.wait(1.2)
-                    end
-                end
-
-                collectItemsInWorkspace_AutoFarm()
-                task.wait(2.5)
-            end
-        end
-    end)
+	task.spawn(function()
+		while isAutoFarmingBoxes do
+			if not hrp then
+				task.wait(1)
+			else
+				local prompts = getAllValidPrompts_AutoFarm()
+				if #prompts > 0 then
+					for _, p in ipairs(prompts) do
+						if not isAutoFarmingBoxes then break end
+						collectPrompt_AutoFarm(p)
+						task.wait(1.2)
+					end
+				end
+				collectItemsInWorkspace_AutoFarm()
+				task.wait(2.5)
+			end
+		end
+	end)
 end
 
 
--- Toggle for Auto Farm Boxes & Barrels
-autoFarmBoxSection:NewToggle("Auto Farm Boxes & Barrels", "เปิด/ปิดระบบฟาร์มกล่องและบาเรลอัตโนมัติ", function(state)
-    isAutoFarmingBoxes = state
-    if isAutoFarmingBoxes then
-       
-        startAutoFarmBoxes()
-    else
-        
-    end
-end)
+autoFarmTab:CreateToggle({
+	Name = "Auto Farm Boxes & Barrels",
+	CurrentValue = false,
+	Callback = function(state)
+		isAutoFarmingBoxes = state
+		if state then
+			startAutoFarmBoxes()
+		end
+	end
+})
 
----
--- ### แท็บที่สอง: Auto Sell
--- ---
-local autoSellTab = Window:NewTab("Auto Sell")
-local autoSellSection = autoSellTab:NewSection("Auto Sell Items")
 
--- List of sellable items
 local sellableItems = {
-    "Arrow",
-    "Mysterious Camera",
-    "Hamon Manual",
-    "Rokakaka",
-    "Stop Sign",
-    "Stone Mask",
-    "Haunted Sword",
-    "Spin Manual",
-    "Barrel",
-    "Bomu Bomu Devil Fruit",
-    "Mochi Mochi Devil Fruit",
-    "Bari Bari Devil Fruit"
+	"Arrow", "Mysterious Camera", "Hamon Manual", "Rokakaka", "Stop Sign", "Stone Mask",
+	"Haunted Sword", "Spin Manual", "Barrel", "Bomu Bomu Devil Fruit",
+	"Mochi Mochi Devil Fruit", "Bari Bari Devil Fruit"
 }
 
--- Toggle control variables
 local sellToggleRunning = false
 local sellToggleTask = nil
 
--- Function to rapidly sell items in the backpack
 local function autoSellBackpackFast()
-    local backpack = plr:FindFirstChild("Backpack")
-    if not backpack then return end
+	local backpack = plr:FindFirstChild("Backpack")
+	if not backpack then return end
+	local sellRemote = game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("SellItem")
 
-    local sellRemote = game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("SellItem")
-
-    for _, itemName in ipairs(sellableItems) do
-        -- Count items with the same name in Backpack
-        local count = 0
-        for _, item in ipairs(backpack:GetChildren()) do
-            if item.Name == itemName then
-                count = count + 1
-            end
-        end
-
-        -- Fire sell command for each item rapidly
-        if count > 0 then
-            for i = 1, count do
-                sellRemote:FireServer(itemName)
-                task.wait(0.05) -- Small delay to prevent issues
-            end
-        end
-    end
+	for _, itemName in ipairs(sellableItems) do
+		local count = 0
+		for _, item in ipairs(backpack:GetChildren()) do
+			if item.Name == itemName then
+				count = count + 1
+			end
+		end
+		if count > 0 then
+			for i = 1, count do
+				sellRemote:FireServer(itemName)
+				task.wait(0.05)
+			end
+		end
+	end
 end
 
--- Function to warp, talk to NPC, and sell items
 local function autoSellAndTalk()
-    sellToggleTask = task.spawn(function()
-        while sellToggleRunning do
-            -- 1. Warp to Chxmei
-            local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
-            if npc and npc:FindFirstChildOfClass("ProximityPrompt") then
-                local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
-                hrp.CFrame = CFrame.new(-619.713013, -32.5270004, 1921.901)
-                task.wait(0.5)
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                task.wait(prompt.HoldDuration or 1.5)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                print("🗨️ คุยกับ Chxmei แล้ว")
-            else
-                warn("❌ ไม่พบ Chxmei หรือ Prompt")
-            end
+	sellToggleTask = task.spawn(function()
+		while sellToggleRunning do
+			local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
+			if npc and npc:FindFirstChildOfClass("ProximityPrompt") then
+				local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
+				hrp.CFrame = CFrame.new(-619.713013, -32.5270004, 1921.901)
+				task.wait(0.5)
+				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+				task.wait(prompt.HoldDuration or 1.5)
+				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+				print("🗨️ ")
+			else
+				warn("❌ ")
+			end
 
-            -- 2. Rapidly sell items
-            autoSellBackpackFast()
-
-            task.wait(5) -- Delay before looping again
-        end
-    end)
+			autoSellBackpackFast()
+			task.wait(5)
+		end
+	end)
 end
 
--- Toggle button for auto-selling
-autoSellSection:NewToggle(" Auto Sell Items", "เปิด/ปิดการขายของอัตโนมัติ + วาร์ป Chxmei", function(state)
-    if state then
-        sellToggleRunning = true
-        autoSellAndTalk()  
-    else
-        sellToggleRunning = false
-        if sellToggleTask then
-            task.cancel(sellToggleTask)
-            sellToggleTask = nil
-        end
-    end
-end)
 
----
--- ### แท็บที่สาม: Teleport Map
--- ---
-local TeleportMapTab = Window:NewTab("Teleport Map")
-local TeleportSection = TeleportMapTab:NewSection("Teleport Map")
+autoSellTab:CreateToggle({
+	Name = "Auto Sell Items",
+	CurrentValue = false,
+	Callback = function(state)
+		if state then
+			sellToggleRunning = true
+			autoSellAndTalk()
+		else
+			sellToggleRunning = false
+			if sellToggleTask then
+				task.cancel(sellToggleTask)
+				sellToggleTask = nil
+			end
+		end
+	end
+})
+
+
+local teleportTab = Window:CreateTab("Teleport", "map")
+local teleportSection = teleportTab:CreateSection("Teleport")
+
 
 local teleportList = {
-    ["Shop"] = CFrame.new(-377.414978, -31.4648972, 1827.23376, 0.937943637, 0.0056101419, 0.346742332, -0.0806112289, 0.976007879, 0.202263251, -0.337288499, -0.217662856, 0.915892601),
-    ["CAFE"] = CFrame.new(-184.333908, -32.6324806, 1450.97107, 0.542804658, 0.0135867689, 0.839749038, -0.0196342822, 0.999801099, -0.00348495319, -0.839629471, -0.0145962201, 0.542963505),
-    ["book"] = CFrame.new(-48.9889183, -116.247437, 328.828979, -1, 0, 0, 0, 1, 0, 0, 0, -1),
-    ["Hollow"] = CFrame.new(-9333.09082, 399.293854, 1739.05737, 4.29153442e-05, 3.75509262e-06, -1, -0.173663557, 0.984805048, -3.75509262e-06, 0.984804988, 0.173663557, 4.29153442e-05),
-    ["PVP"] = CFrame.new(-519.294861, -35.1970901, 1655.45898, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["Ronin"] = CFrame.new(-3674.99902, 94.8464127, -1169.98804, 0, 0, 1, 0, -1, 0, 1, 0, -0),
-    ["BBQ3"] = CFrame.new(704.550049, 116.210938, -1357.19482, -1, 0, 0, 0, 0, 1, 0, 1, -0),
-    ["BaikenPlace"] = CFrame.new(-14445.7402, -22.2789726, -3553.54053, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["BossSpawn RoninV2"] = CFrame.new(-352.300415, 8.00000381, 13042.4004, 0, 0, -1, 0, 1, 0, 1, 0, 0),
-    ["Chill and relax"] = CFrame.new(-349.424469, -9.99766541, 1176.19006, 0.965929627, 0, 0.258804798, 0, 1, 0, -0.258804798, 0, 0.965929627),
-    ["Okarun"] = CFrame.new(-3701.47876, 696.754578, 5377.51123, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["BossSpawn RoninV1"] = CFrame.new(-26239.3945, 30.2711182, 24850.1602, 0, 0, -1, 0, 1, 0, 1, 0, 0),
-    ["EyeZone"] = CFrame.new(-18183.957, 990.572449, 7267.02295, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["Wou"] = CFrame.new(-599.39032, -118.328743, 2098.08887, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["Dio"] = CFrame.new(7476.32324, -430.687408, -4019.21753, 0, 0, 1, 0, 1, -0, -1, 0, 0),
-    ["forestfire"] = CFrame.new(-2035.63354, -386.424042, -5356.22461, 0, 0, -1, 0, 1, 0, 1, 0, 0),
-    ["Domain"] = CFrame.new(15668.4658, -379.998291, 25310.0898, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["PB"] = CFrame.new(-2602.41211, 646.477661, -3351.8623, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["BattleArena"] = CFrame.new(856.786316, -428.90448, -750.567993, -1, 0, 0, 0, 1, 0, 0, 0, -1),
-    ["กูไม่รู้มันคือไร"] = CFrame.new(-3143.32495, -1.49950004, -10579.5752, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["WOU2"] = CFrame.new(-18689.2637, 931.929993, 7134.66748, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["ห้องทำงานพวกโง่"] = CFrame.new(-637.749084, 1.00501442, -262.399475, -1, 0, 0, 0, 1, 0, 0, 0, -1),
-    ["เกดุ"] = CFrame.new(-7146.22119, -27.1148205, 1295.23523, 0, 0, 1, 0, 1, -0, -1, 0, 0),
-    ["ดาบแดง"] = CFrame.new(-255.541168, 34.4699783, -2851.14014, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["Cave"] = CFrame.new(-2284.29199, -393.49118, -4989.96924, -0.993314743, 0.100021183, 0.0576342195, 0.0373474397, -0.1939677, 0.980296731, 0.109229609, 0.975895643, 0.188935399),
-    ["ถ้วย"] = CFrame.new(3813.12231, -157.168457, 4539.01416, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+	["Shop"] = CFrame.new(-377.414978, -31.4648972, 1827.23376),
+	["CAFE"] = CFrame.new(-184.333908, -32.6324806, 1450.97107),
+	["book"] = CFrame.new(-48.9889183, -116.247437, 328.828979),
+	["Hollow"] = CFrame.new(-9333.09082, 399.293854, 1739.05737),
+	["PVP"] = CFrame.new(-519.294861, -35.1970901, 1655.45898),
+	["Ronin"] = CFrame.new(-3674.99902, 94.8464127, -1169.98804),
+	["BBQ3"] = CFrame.new(704.550049, 116.210938, -1357.19482),
+	["BaikenPlace"] = CFrame.new(-14445.7402, -22.2789726, -3553.54053),
+	["BossSpawn RoninV2"] = CFrame.new(-352.300415, 8.00000381, 13042.4004),
+	["Chill and relax"] = CFrame.new(-349.424469, -9.99766541, 1176.19006),
+	["Okarun"] = CFrame.new(-3701.47876, 696.754578, 5377.51123),
+	["BossSpawn RoninV1"] = CFrame.new(-26239.3945, 30.2711182, 24850.1602),
+	["EyeZone"] = CFrame.new(-18183.957, 990.572449, 7267.02295),
+	["Wou"] = CFrame.new(-599.39032, -118.328743, 2098.08887),
+	["Dio"] = CFrame.new(7476.32324, -430.687408, -4019.21753),
+	["forestfire"] = CFrame.new(-2035.63354, -386.424042, -5356.22461),
+	["Domain"] = CFrame.new(15668.4658, -379.998291, 25310.0898),
+	["PB"] = CFrame.new(-2602.41211, 646.477661, -3351.8623),
+	["BattleArena"] = CFrame.new(856.786316, -428.90448, -750.567993),
+	["กูไม่รู้มันคือไร"] = CFrame.new(-3143.32495, -1.49950004, -10579.5752),
+	["WOU2"] = CFrame.new(-18689.2637, 931.929993, 7134.66748),
+	["ห้องทำงานพวกโง่"] = CFrame.new(-637.749084, 1.00501442, -262.399475),
+	["เกดุ"] = CFrame.new(-7146.22119, -27.1148205, 1295.23523),
+	["ดาบแดง"] = CFrame.new(-255.541168, 34.4699783, -2851.14014),
+	["Cave"] = CFrame.new(-2284.29199, -393.49118, -4989.96924),
+	["ถ้วย"] = CFrame.new(3813.12231, -157.168457, 4539.01416),
 }
 
--- Create buttons for each teleport location
+
+local plr = game.Players.LocalPlayer
+local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or plr.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
+
+
 for name, cframe in pairs(teleportList) do
-    TeleportSection:NewButton("Teleport: " .. name, "Teleport " .. name, function()
-        hrp.CFrame = cframe
-    end)
+	teleportTab:CreateButton({
+		Name = name,
+		Callback = function()
+			if hrp then
+				hrp.CFrame = cframe
+				
+			end
+		end
+	})
 end
 
----
--- ### แท็บที่สี่: Teleport NPC
--- ---
-local NPCTeleportTab = Window:NewTab("Teleport NPC")
-local NPCTeleportSection = NPCTeleportTab:NewSection("Teleport NPC")
+
+local npcTeleportTab = Window:CreateTab("Teleport NPC", "users")
+local npcSection = npcTeleportTab:CreateSection(" NPC ")
+
 
 local npcTeleportList = {
     AMM = CFrame.new(-236.787, -32.525, 1472.125),
@@ -314,20 +301,30 @@ local npcTeleportList = {
     Baiken = CFrame.new(-446.574921, -33.3681908, 1818.41248, 0.105164446, 0.187645465, 0.97659111, 0.0408497751, 0.980392337, -0.192774728, -0.993615866, 0.060166575, 0.0954371542)
 }
 
--- Create buttons for each NPC teleport location
+
+local plr = game.Players.LocalPlayer
+local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or plr.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
+
+
 for name, cframe in pairs(npcTeleportList) do
-    NPCTeleportSection:NewButton("Teleport NPC: " .. name, "Teleport to " .. name, function()
-        hrp.CFrame = cframe
-    end)
+	npcTeleportTab:CreateButton({
+		Name = name,
+		Callback = function()
+			if hrp then
+				hrp.CFrame = cframe
+				
+			end
+		end
+	})
 end
 
----
--- ### แท็บที่ห้า: Ronin Quest
--- ---
-local RoninQuestTab = Window:NewTab("Ronin Quest")
-local RoninQuestTeleportSection = RoninQuestTab:NewSection("Ronin QuestV2")
+
+local roninQuestTab = Window:CreateTab("Ronin Quest", "target")
+local roninSection = roninQuestTab:CreateSection("Ronin Quest V2")
+
 
 local roninQuestTeleportList = {
+
     ["1"] = CFrame.new(-534.262878, -261.767517, -4447.94678, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["2"] = CFrame.new(7558.78906, -416.672913, -3887.48145, 0.923132539, 0.0497069918, -0.38125518, 0.0210493021, 0.983586729, 0.179203987, 0.383905202, -0.173454195, 0.906934619),
     ["3"] = CFrame.new(-8931.51953, 420.982635, 1407.76099, -0.0231808424, -0.0539431982, -0.998275042, 0.0529567339, 0.997075081, -0.0551080592, 0.998327851, -0.0541428216, -0.0202564001),
@@ -338,18 +335,27 @@ local roninQuestTeleportList = {
     ["8"] = CFrame.new(-6965.54248, -29.1699066, 1101.05481, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 }
 
--- Create buttons for each Ronin Quest teleport location
-for name, cframe in pairs(roninQuestTeleportList) do
-    RoninQuestTeleportSection:NewButton("Teleport: " .. name, "Teleport " .. name, function()
-        hrp.CFrame = cframe       
-    end)
+
+local plr = game.Players.LocalPlayer
+local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or plr.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
+
+
+for number, cframe in pairs(roninQuestTeleportList) do
+	roninQuestTab:CreateButton({
+		Name = " TP " .. number,
+		Callback = function()
+			if hrp then
+				hrp.CFrame = cframe
+				
+			end
+		end
+	})
 end
 
----
--- ### แท็บที่หก: Chants
--- ---
-local chantTab = Window:NewTab("Chants")
-local chantSection = chantTab:NewSection("Chants")
+
+local Tab = Window:CreateTab("Chants")
+local ChantsSection = Tab:CreateSection("Chants Section")
+
 
 local vim = game:GetService("VirtualInputManager")
 local chants = {
@@ -365,10 +371,9 @@ local chants = {
 
 local TYPE_DELAY = 0.05
 
--- Function to type a message into chat
 local function typeChat(message)
     local TextChatService = game:GetService("TextChatService")
-    local GeneralChannel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral")
+    local GeneralChannel = TextChatService:FindFirstChild("TextChannels") and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
 
     if GeneralChannel then
         GeneralChannel:SendAsync(message)
@@ -391,230 +396,93 @@ local function typeChat(message)
     end
 end
 
--- Create buttons for each chant
+-- สร้างปุ่มสำหรับแต่ละ chant
 for _, chant in ipairs(chants) do
-    chantSection:NewButton("Chants: " .. chant, "พิมพ์ " .. chant .. " ลงแชท", function()
-        typeChat(chant)
-    end)
+    Tab:CreateButton({
+        Name = chant,
+        Callback = function()
+            print("ส่ง Chant: " .. chant)
+            typeChat(chant)
+        end,
+    })
 end
 
----
--- ### แท็บที่เจ็ด: Auto Dummy
--- ---
-local Tab = Window:NewTab("Auto Dummy")
-local Section = Tab:NewSection("Auto Attack Settings")
 
--- (Existing services and localPlayer, character, hrp are already defined globally above, no need to redefine)
--- local Players = game:GetService("Players")
--- local VirtualInputManager = game:GetService("VirtualInputManager")
--- local localPlayer = Players.LocalPlayer
--- local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
--- local hrp = character:WaitForChild("HumanoidRootPart")
 
-local dummyTypes = {
-    "Dummy",
-    "Attacking Dummy",
-    "Blocking Dummy",
-    "Counter Dummy"
-}
+local Tab = Window:CreateTab("Monster & dummy")
+local DummySection = Tab:CreateSection("Monster & dummy Section")
 
-local selectedDummy = "Dummy"
-local attacking = false
-local attackLoop = nil
+local Toggle = Tab:CreateToggle({
+   Name = "Dummy",
+   CurrentValue = false,
+   Flag = "Toggle1", 
+   Callback = function(Value)
 
-local offsetX = 3
-local offsetY = 0
-local maxAttackDistance = 10000     -- ระยะตีสูงสุด (stud)
-local attackCooldown = 0.1         -- วินาทีระหว่างโจมตี
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
 
-Section:NewDropdown("Dummy", "ตอก Dummy", dummyTypes, function(selected)
-    selectedDummy = selected
-end)
+local targetIndex = 5
+local checkDistance = 50 -- กำหนดระยะที่พิจารณาว่าใกล้ เช่น 50 studs
 
-local function getNearestDummy()
-    local nearestDummy = nil
-    local nearestDist = math.huge
+local function tryTeleportToTarget()
+    local livingChildren = workspace.Living:GetChildren()
+    if #livingChildren >= targetIndex then
+        local target = livingChildren[targetIndex]
+        if target and target:FindFirstChild("HumanoidRootPart") then
+            local targetPos = target.HumanoidRootPart.Position
+            local playerPos = hrp.Position
+            local distance = (targetPos - playerPos).Magnitude
 
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") and obj.Name == selectedDummy and obj:FindFirstChild("HumanoidRootPart") then
-            local dummyHRP = obj.HumanoidRootPart
-            local dist = (hrp.Position - dummyHRP.Position).Magnitude
-            if dist < nearestDist and dist <= maxAttackDistance then
-                nearestDist = dist
-                nearestDummy = obj
+            if distance <= checkDistance then
+                hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 5, 0)) -- วาปสูงขึ้น 5 studs เผื่อไม่ติดพื้น
+                print("Teleport to target "..target.Name)
+            else
+                print("Target is too far:", distance)
             end
+        else
+            print("Target does not have HumanoidRootPart")
         end
+    else
+        print("Living does not have enough children")
     end
-
-    return nearestDummy, nearestDist
 end
 
-local function attackDummy(dummyModel)
-    local dummyHRP = dummyModel.HumanoidRootPart
-    local dummyName = dummyModel.Name
+-- เรียกฟังก์ชันนี้ทุกๆ 1 วินาที
+while true do
+    tryTeleportToTarget()
+    wait(1)
+end
 
-    if dummyName == "Attacking Dummy" then
-        local lookVector = dummyHRP.CFrame.LookVector
-        local offset = Vector3.new(lookVector.X * offsetX, offsetY, lookVector.Z * offsetX)
-        hrp.CFrame = dummyHRP.CFrame * CFrame.new(offset)
-    else
-        hrp.CFrame = dummyHRP.CFrame * CFrame.new(0, 0, 2)
-    end
 
-    -- โจมตีจำลองคลิกซ้าย
-    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-    task.wait(0.05)
-    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+   end,
+})
 
+local Toggle = Tab:CreateToggle({
+   Name = "Attacking Dummy",
+   CurrentValue = false,
+   Flag = "Toggle2", 
+   Callback = function(Value)
    
-end
 
-Section:NewToggle("Auto Attack", "ตีดัมมี่อัตโนมัติ", function(state)
-    attacking = state
+   end,
+})
+local Toggle = Tab:CreateToggle({
+   Name = "Blocking Dummy",
+   CurrentValue = false,
+   Flag = "Toggle3", 
+   Callback = function(Value)
+   
 
-    if attacking then
-        attackLoop = task.spawn(function()
-            while attacking do
-                character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-                hrp = character:WaitForChild("HumanoidRootPart")
+   end,
+})
+local Toggle = Tab:CreateToggle({
+   Name = "Counter Dummy",
+   CurrentValue = false,
+   Flag = "Toggle4", 
+   Callback = function(Value)
+   
 
-                local nearest, dist = getNearestDummy()
-                if nearest then
-                    if dist > 5 then
-                        -- ถ้าไกลเกิน 5 stud ให้รอสั้นๆก่อนวาร์ป (ถ้าชอบให้เดินแทน วาร์ปเปลี่ยนตรงนี้ได้)
-                        hrp.CFrame = nearest.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                        task.wait(0.3)
-                    end
-                    attackDummy(nearest)
-                    task.wait(attackCooldown)
-                else
-                    
-                    task.wait(2)
-                end
-            end
-        end)
-    else
-        if attackLoop then
-            task.cancel(attackLoop)
-            attackLoop = nil
-        end
-        
-    end
-end)
-
-
-local holdETeleportTab = Window:NewTab("Auto random skin")
-local holdETeleportSection = holdETeleportTab:NewSection("Auto random skin")
-
-local bodyPos = nil
-local isHoldingE = false
-local targetPos = Vector3.new(-193.988007, -32.0089989 + 3, 1464.33105)
-
-local function startHoldingE()
-    if isHoldingE then return end
-    isHoldingE = true
-    task.spawn(function()
-        while isHoldingE do
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-            task.wait(1)
-            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-            task.wait(0.1)
-        end
-    end)
-end
-
-local function stopHoldingE()
-    if not isHoldingE then return end
-    isHoldingE = false
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-end
-
-local function lockPosition()
-    if bodyPos then return end
-    bodyPos = Instance.new("BodyPosition")
-    bodyPos.Position = targetPos
-    bodyPos.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-    bodyPos.P = 1e4
-    bodyPos.Parent = hrp
-end
-
-local function unlockPosition()
-    if bodyPos then
-        bodyPos:Destroy()
-        bodyPos = nil
-    end
-end
-
-local function teleportLockAndHoldE()
-    hrp.CFrame = CFrame.new(targetPos)
-    task.wait(0.3)
-    lockPosition()
-    startHoldingE()
-end
-
-local function releaseLockAndStopE()
-    unlockPosition()
-    stopHoldingE()
-end
-
-holdETeleportSection:NewToggle("Auto random skin", " E ", function(state)
-    if state then
-        teleportLockAndHoldE()
-    else
-        releaseLockAndStopE()
-    end
-end)
-
---- 
--- ### แท็บที่แปด: Auto Skill
----
-local skillTab = Window:NewTab("Auto Use Skills")
-local skillSection = skillTab:NewSection("Auto Skill ")
-
-local skillKeys = {
-    Enum.KeyCode.E,
-    Enum.KeyCode.R,
-    Enum.KeyCode.T,
-    Enum.KeyCode.Y,
-    Enum.KeyCode.G,
-    Enum.KeyCode.H,
-    Enum.KeyCode.Q,
-    Enum.KeyCode.Z,
-    Enum.KeyCode.X,
-    Enum.KeyCode.V,
-    Enum.KeyCode.B
-}
-
-local autoSkillEnabled = false
-local skillCooldown = 1.0
-local skillLoop = nil
-
-skillSection:NewToggle("Auto Use Skills", "เปิด/ปิด", function(state)
-    autoSkillEnabled = state
-
-    if autoSkillEnabled then
-        skillLoop = task.spawn(function()
-            while autoSkillEnabled do
-                for _, key in ipairs(skillKeys) do
-                    VirtualInputManager:SendKeyEvent(true, key, false, game)
-                    task.wait(0.03)
-                    VirtualInputManager:SendKeyEvent(false, key, false, game)
-                    task.wait(0.05)
-                end
-                task.wait(skillCooldown)
-            end
-        end)
-       
-    else
-        if skillLoop then
-            task.cancel(skillLoop)
-            skillLoop = nil
-        end
-        
-    end
-end)
-
-skillSection:NewSlider("Skill Cooldown", "ควย", 5, 0.1, 1.0, function(val)
-    skillCooldown = val
-    
-end)
+   end,
+})
