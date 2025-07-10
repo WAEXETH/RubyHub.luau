@@ -1,13 +1,13 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-	Name = "Luby Hub By zazq_io & tj_150719",
+	Name = "Luby Hub By zazq_io",
 	Icon = "package",
 	LoadingTitle = "Load...",
 	LoadingSubtitle = "wait...",
 	ShowText = "เปิดเมนู",
 	Theme = "Default",
-	ToggleUIKeybind = "V",
+	ToggleUIKeybind = "K",
 	KeySystem = false
 })
 
@@ -298,7 +298,6 @@ local npcTeleportList = {
     Vergilius = CFrame.new(-694.137, -31.12, 1585.219),
     buttersky20000 = CFrame.new(-2067.959, -289.603, -4685.778),
     piknishi = CFrame.new(-193.988, -32.009, 1464.331),
-    Baiken = CFrame.new(-446.574921, -33.3681908, 1818.41248, 0.105164446, 0.187645465, 0.97659111, 0.0408497751, 0.980392337, -0.192774728, -0.993615866, 0.060166575, 0.0954371542)
 }
 
 
@@ -412,77 +411,285 @@ end
 local Tab = Window:CreateTab("Monster & dummy")
 local DummySection = Tab:CreateSection("Monster & dummy Section")
 
-local Toggle = Tab:CreateToggle({
-   Name = "Dummy",
-   CurrentValue = false,
-   Flag = "Toggle1", 
-   Callback = function(Value)
-
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
-local targetIndex = 5
-local checkDistance = 50 -- กำหนดระยะที่พิจารณาว่าใกล้ เช่น 50 studs
 
-local function tryTeleportToTarget()
-    local livingChildren = workspace.Living:GetChildren()
-    if #livingChildren >= targetIndex then
-        local target = livingChildren[targetIndex]
-        if target and target:FindFirstChild("HumanoidRootPart") then
-            local targetPos = target.HumanoidRootPart.Position
-            local playerPos = hrp.Position
-            local distance = (targetPos - playerPos).Magnitude
+local stickyEnabled = false
 
-            if distance <= checkDistance then
-                hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 5, 0)) -- วาปสูงขึ้น 5 studs เผื่อไม่ติดพื้น
-                print("Teleport to target "..target.Name)
-            else
-                print("Target is too far:", distance)
+
+local function getNearestTarget()
+    local nearest = nil
+    local shortestDistance = math.huge
+    for _, obj in pairs(workspace.Living:GetChildren()) do
+        if obj:IsA("Model")
+        and obj:FindFirstChild("Humanoid")
+        and obj:FindFirstChild("HumanoidRootPart")
+        and obj ~= character
+        and obj.Humanoid.Health > 0
+        and obj.Name == "Dummy" then 
+            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearest = obj
             end
-        else
-            print("Target does not have HumanoidRootPart")
         end
-    else
-        print("Living does not have enough children")
+    end
+    return nearest
+end
+
+
+RunService.RenderStepped:Connect(function()
+    if stickyEnabled then
+        local target = getNearestTarget()
+        if target then
+            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        end
+    end
+end)
+
+
+local Toggle = Tab:CreateToggle({
+    Name = "Dummy",
+    CurrentValue = false,
+    Flag = "StickyWarp",
+    Callback = function(Value)
+        stickyEnabled = Value
+    end,
+})
+
+
+local stickyEnabled = false
+
+local Toggle = Tab:CreateToggle({
+   Name = "Attacking Dummy", 
+   CurrentValue = false,               
+   Flag = "StickyWarp_AttackingDummy", 
+   Callback = function(Value)
+      stickyEnabled = Value           
+   end,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local function getNearestTarget()
+    local nearest = nil
+    local shortestDistance = math.huge
+    for _, obj in pairs(workspace.Living:GetChildren()) do
+        if obj:IsA("Model")
+        and obj:FindFirstChild("Humanoid")
+        and obj:FindFirstChild("HumanoidRootPart")
+        and obj ~= character
+        and obj.Humanoid.Health > 0
+        and obj.Name == "Attacking Dummy" then
+            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearest = obj
+            end
+        end
+    end
+    return nearest
+end
+
+RunService.RenderStepped:Connect(function()
+    if stickyEnabled then
+        local target = getNearestTarget()
+        if target then
+            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        end
+    end
+end)
+
+
+
+local stickyEnabled = false
+
+local Toggle = Tab:CreateToggle({
+   Name = "Attacking Dummy", 
+   CurrentValue = false,               
+   Flag = "StickyWarp_Blocking Dummy", 
+   Callback = function(Value)
+      stickyEnabled = Value           
+   end,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local function getNearestTarget()
+    local nearest = nil
+    local shortestDistance = math.huge
+    for _, obj in pairs(workspace.Living:GetChildren()) do
+        if obj:IsA("Model")
+        and obj:FindFirstChild("Humanoid")
+        and obj:FindFirstChild("HumanoidRootPart")
+        and obj ~= character
+        and obj.Humanoid.Health > 0
+        and obj.Name == "Blocking Dummy" then
+            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearest = obj
+            end
+        end
+    end
+    return nearest
+end
+
+RunService.RenderStepped:Connect(function()
+    if stickyEnabled then
+        local target = getNearestTarget()
+        if target then
+            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        end
+    end
+end)
+
+
+local stickyEnabled = false
+
+local Toggle = Tab:CreateToggle({
+   Name = "Counter Dummy", 
+   CurrentValue = false,               
+   Flag = "StickyWarp_Counter Dummy", 
+   Callback = function(Value)
+      stickyEnabled = Value           
+   end,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+local function getNearestTarget()
+    local nearest = nil
+    local shortestDistance = math.huge
+    for _, obj in pairs(workspace.Living:GetChildren()) do
+        if obj:IsA("Model")
+        and obj:FindFirstChild("Humanoid")
+        and obj:FindFirstChild("HumanoidRootPart")
+        and obj ~= character
+        and obj.Humanoid.Health > 0
+        and obj.Name == "Counter Dummy" then
+            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearest = obj
+            end
+        end
+    end
+    return nearest
+end
+
+RunService.RenderStepped:Connect(function()
+    if stickyEnabled then
+        local target = getNearestTarget()
+        if target then
+            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+        end
+    end
+end)
+
+
+local Tab = Window:CreateTab("Auto Use Skills & Attacking M1")
+local DummySection = Tab:CreateSection("Auto Use Skills & Attacking M1")
+
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local autoSkillEnabled = false
+local autoAttackEnabled = false
+
+-- สร้าง Toggle เปิด/ปิด Auto Skill
+local skillToggle = Tab:CreateToggle({
+    Name = "Auto Skill",
+    CurrentValue = false,
+    Flag = "AutoSkillToggle",
+    Callback = function(Value)
+        autoSkillEnabled = Value
+    end,
+})
+
+-- สร้าง Toggle เปิด/ปิด Auto Attack (คลิกเมาส์ซ้าย)
+local attackToggle = Tab:CreateToggle({
+    Name = "Auto Attack",
+    CurrentValue = false,
+    Flag = "AutoAttackToggle",
+    Callback = function(Value)
+        autoAttackEnabled = Value
+    end,
+})
+
+-- รายการ KeyCode สกิลทั้งหมด
+local skillKeys = {
+    Enum.KeyCode.E,
+    Enum.KeyCode.R,
+    Enum.KeyCode.T,
+    Enum.KeyCode.Y,
+    Enum.KeyCode.G,
+    Enum.KeyCode.H,
+    Enum.KeyCode.Q,
+    Enum.KeyCode.Z,
+    Enum.KeyCode.X,
+    Enum.KeyCode.V,
+    Enum.KeyCode.B,
+}
+
+local lastPause = tick() -- เวลาเริ่มต้น
+local pauseDuration = 2 -- เวลาหยุด (วินาที)
+local activeDuration = 5 -- เวลาทำงาน (วินาที)
+local isPaused = false
+
+-- ใช้สกิล
+local function pressSkillKeys()
+    for _, keyCode in ipairs(skillKeys) do
+        VirtualInputManager:SendKeyEvent(true, keyCode, false, nil)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, keyCode, false, nil)
+        task.wait(0.1)
     end
 end
 
--- เรียกฟังก์ชันนี้ทุกๆ 1 วินาที
-while true do
-    tryTeleportToTarget()
-    wait(1)
+-- โจมตีปกติ (คลิกตรงกลางจอ)
+local function pressAttack()
+    local screenSize = workspace.CurrentCamera.ViewportSize
+    local centerX = screenSize.X / 2
+    local centerY = screenSize.Y / 2
+
+    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
+    task.wait(0.05)
+    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
 end
 
+-- ลูปทำงานหลัก
+RunService.RenderStepped:Connect(function()
+    local now = tick()
 
-   end,
-})
+    -- ตรวจสอบว่าควรพักหรือยัง
+    if not isPaused and now - lastPause >= activeDuration then
+        isPaused = true
+        lastPause = now
+    elseif isPaused and now - lastPause >= pauseDuration then
+        isPaused = false
+        lastPause = now
+    end
 
-local Toggle = Tab:CreateToggle({
-   Name = "Attacking Dummy",
-   CurrentValue = false,
-   Flag = "Toggle2", 
-   Callback = function(Value)
-   
-
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Blocking Dummy",
-   CurrentValue = false,
-   Flag = "Toggle3", 
-   Callback = function(Value)
-   
-
-   end,
-})
-local Toggle = Tab:CreateToggle({
-   Name = "Counter Dummy",
-   CurrentValue = false,
-   Flag = "Toggle4", 
-   Callback = function(Value)
-   
-
-   end,
-})
+    -- ถ้ายังไม่หยุดพัก ให้กดสกิล + โจมตี
+    if not isPaused then
+        if autoSkillEnabled then pressSkillKeys() end
+        if autoAttackEnabled then pressAttack() end
+    end
+end)
