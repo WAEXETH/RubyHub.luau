@@ -17,8 +17,6 @@ local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
 local autoFarmSection = autoFarmTab:CreateSection("Farm")
 local autoSellSection = autoSellTab:CreateSection("Sell")
 
-
-
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
@@ -114,7 +112,6 @@ function startAutoFarmBoxes()
 		end
 	end)
 end
-
 
 autoFarmTab:CreateToggle({
 	Name = "Auto Farm Boxes & Barrels",
@@ -410,933 +407,66 @@ end
 local Tab = Window:CreateTab("Monster & dummy ")
 local DummySection = Tab:CreateSection("Monster & dummy Section")
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+local stickyEnemies = {
+    ["Dummy"] = true,
+    ["Attacking Dummy"] = true,
+    ["Blocking Dummy"] = true,
+    ["Counter Dummy"] = true,
+    ["Adjuchas"] = true,
+    ["Deku"] = true,
+    ["Toji"] = true,
+    ["Thug"] = true,
+    ["Spider Curse"] = true,
+    ["Mosquito Curse"] = true,
+    ["Bandit"] = true,
+    ["Frog Hollow"] = true,
+    ["Fishbone"] = true,
+    ["Glutton Curse"] = true,
+    ["Contorted Curse"] = true,
+    ["Menos"] = true,
+    ["Jotaro Kujo"] = true,
+}
 
-
-local stickyEnabled = false
-
-
-local function getNearestTarget()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj ~= character
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Dummy" then 
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
-
-RunService.RenderStepped:Connect(function()
-    if stickyEnabled then
-        local target = getNearestTarget()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Dummy",
-    CurrentValue = false,
-    Flag = "StickyWarp",
-    Callback = function(Value)
-        stickyEnabled = Value
-    end,
-})
-
-
-local stickyEnabled = false
-
-local Toggle = Tab:CreateToggle({
-   Name = "Attacking Dummy", 
-   CurrentValue = false,               
-   Flag = "StickyWarp_AttackingDummy", 
-   Callback = function(Value)
-      stickyEnabled = Value           
-   end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local function getNearestTarget()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj ~= character
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Attacking Dummy" then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
-RunService.RenderStepped:Connect(function()
-    if stickyEnabled then
-        local target = getNearestTarget()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-
-local stickyEnabled = false
-
-local Toggle = Tab:CreateToggle({
-   Name = "Blocking Dummy", 
-   CurrentValue = false,               
-   Flag = "StickyWarp_Blocking Dummy", 
-   Callback = function(Value)
-      stickyEnabled = Value           
-   end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local function getNearestTarget()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj ~= character
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Blocking Dummy" then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
-RunService.RenderStepped:Connect(function()
-    if stickyEnabled then
-        local target = getNearestTarget()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local stickyEnabled = false
-
-local Toggle = Tab:CreateToggle({
-   Name = "Counter Dummy", 
-   CurrentValue = false,               
-   Flag = "StickyWarp_Counter Dummy", 
-   Callback = function(Value)
-      stickyEnabled = Value           
-   end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local function getNearestTarget()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj ~= character
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Counter Dummy" then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
-RunService.RenderStepped:Connect(function()
-    if stickyEnabled then
-        local target = getNearestTarget()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
+local stickyEnabled = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyAdjuchasEnabled = false
-
 
 player.CharacterAdded:Connect(function(char)
     character = char
     hrp = character:WaitForChild("HumanoidRootPart")
 end)
 
+local function createStickyToggle(enemyName)
+    Tab:CreateToggle({
+        Name = enemyName,
+        CurrentValue = false,
+        Flag = "Sticky_" .. enemyName,
+        Callback = function(state)
+            stickyEnabled[enemyName] = state
+        end,
+    })
+end
 
-local function getNearestAdjuchas()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Adjuchas"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
+for name in pairs(stickyEnemies) do
+    createStickyToggle(name)
+end
+
+RunService.RenderStepped:Connect(function()
+    for name, enabled in pairs(stickyEnabled) do
+        if enabled then
+            for _, obj in pairs(workspace.Living:GetChildren()) do
+                if obj:IsA("Model") and obj.Name == name and obj ~= character and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Humanoid.Health > 0 then
+                    hrp.CFrame = obj.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
+                    break
+                end
             end
         end
     end
-    return nearest
-end
-
-
-RunService.RenderStepped:Connect(function()
-    if stickyAdjuchasEnabled and hrp then
-        local target = getNearestAdjuchas()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-        end
-    end
 end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Adjuchas",
-    CurrentValue = false,
-    Flag = "StickyAdjuchas",
-    Callback = function(Value)
-        stickyAdjuchasEnabled = Value
-    end,
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นเกิดใหม่
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Deku ใกล้สุด
-local function getNearestDeku()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Deku"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Deku เรื่อย ๆ
-RunService.RenderStepped:Connect(function()
-    if stickyEnabled and hrp then
-        local target = getNearestDeku()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
--- ✅ Toggle UI
-local Toggle = Tab:CreateToggle({
-    Name = "Deku",
-    CurrentValue = false,
-    Flag = "StickyDeku",
-    Callback = function(Value)
-        stickyEnabled = Value
-    end,
-})
-
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyTojiEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นฟื้นคืนชีพ
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Toji ใกล้สุด
-local function getNearestToji()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Toji"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Toji
-RunService.RenderStepped:Connect(function()
-    if stickyTojiEnabled and hrp then
-        local target = getNearestToji()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Toji",
-    CurrentValue = false,
-    Flag = "StickyToji",
-    Callback = function(Value)
-        stickyTojiEnabled = Value
-    end,
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyThugEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นฟื้นคืนชีพ
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Thug ใกล้สุด
-local function getNearestThug()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Thug"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Thug
-RunService.RenderStepped:Connect(function()
-    if stickyThugEnabled and hrp then
-        local target = getNearestThug()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Thug",
-    CurrentValue = false,
-    Flag = "StickyThug",
-    Callback = function(Value)
-        stickyThugEnabled = Value
-    end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickySpiderCurseEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นฟื้นคืนชีพ
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Spider Curse ใกล้สุด
-local function getNearestSpiderCurse()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Spider Curse"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Spider Curse
-RunService.RenderStepped:Connect(function()
-    if stickySpiderCurseEnabled and hrp then
-        local target = getNearestSpiderCurse()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Spider Curse",
-    CurrentValue = false,
-    Flag = "StickySpiderCurse",
-    Callback = function(Value)
-        stickySpiderCurseEnabled = Value
-    end,
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyMosquitoCurseEnabled = false
-
--- อัปเดต character และ hrp เมื่อผู้เล่นฟื้นคืนชีพ
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Mosquito Curse ใกล้สุด
-local function getNearestMosquitoCurse()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Mosquito Curse"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปติดกาว
-RunService.RenderStepped:Connect(function()
-    if stickyMosquitoCurseEnabled and hrp then
-        local target = getNearestMosquitoCurse()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
--- ✅ Toggle UI
-local Toggle = Tab:CreateToggle({
-    Name = "Mosquito Curse",
-    CurrentValue = false,
-    Flag = "StickyMosquitoCurse",
-    Callback = function(Value)
-        stickyMosquitoCurseEnabled = Value
-    end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyBanditEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่เกิดใหม่
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันหามอนชื่อ Bandit ใกล้สุด
-local function getNearestBandit()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Bandit"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Bandit
-RunService.RenderStepped:Connect(function()
-    if stickyBanditEnabled and hrp then
-        local target = getNearestBandit()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
--- ✅ Toggle UI
-local Toggle = Tab:CreateToggle({
-    Name = "Bandit",
-    CurrentValue = false,
-    Flag = "StickyBandit",
-    Callback = function(Value)
-        stickyBanditEnabled = Value
-    end,
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyFrogHollowEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นเกิดใหม่
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Frog Hollow ใกล้สุด
-local function getNearestFrogHollow()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Frog Hollow"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Frog Hollow
-RunService.RenderStepped:Connect(function()
-    if stickyFrogHollowEnabled and hrp then
-        local target = getNearestFrogHollow()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
--- ✅ Toggle UI
-local Toggle = Tab:CreateToggle({
-    Name = "Frog Hollow",
-    CurrentValue = false,
-    Flag = "StickyFrogHollow",
-    Callback = function(Value)
-        stickyFrogHollowEnabled = Value
-    end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyFishboneEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นเกิดใหม่
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Fishbone ใกล้สุด
-local function getNearestFishbone()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Fishbone"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Fishbone
-RunService.RenderStepped:Connect(function()
-    if stickyFishboneEnabled and hrp then
-        local target = getNearestFishbone()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
--- ✅ Toggle UI
-local Toggle = Tab:CreateToggle({
-    Name = "Fish bone",
-    CurrentValue = false,
-    Flag = "StickyFishbone",
-    Callback = function(Value)
-        stickyFishboneEnabled = Value
-    end,
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyGluttonCurseEnabled = false
-
--- อัปเดต character และ hrp ทุกครั้งที่ผู้เล่นฟื้นคืนชีพ
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Glutton Curse ใกล้สุด
-local function getNearestGluttonCurse()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Glutton Curse"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปไปหา Glutton Curse
-RunService.RenderStepped:Connect(function()
-    if stickyGluttonCurseEnabled and hrp then
-        local target = getNearestGluttonCurse()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Glutton Curse",
-    CurrentValue = false,
-    Flag = "StickyGluttonCurse",
-    Callback = function(Value)
-        stickyGluttonCurseEnabled = Value
-    end,
-})
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyContortedCurseEnabled = false
-
--- อัปเดต character และ hrp เมื่อผู้เล่นเกิดใหม่
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
--- ฟังก์ชันค้นหา Contorted Curse ใกล้สุด
-local function getNearestContortedCurse()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Contorted Curse"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
--- ลูปวาร์ปติดกาวไปหามอน
-RunService.RenderStepped:Connect(function()
-    if stickyContortedCurseEnabled and hrp then
-        local target = getNearestContortedCurse()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Contorted Curse",
-    CurrentValue = false,
-    Flag = "StickyContortedCurse",
-    Callback = function(Value)
-        stickyContortedCurseEnabled = Value
-    end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyMenosEnabled = false
-
-
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
-
-local function getNearestMenos()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Menos"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
-
-RunService.RenderStepped:Connect(function()
-    if stickyMenosEnabled and hrp then
-        local target = getNearestMenos()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Menos",
-    CurrentValue = false,
-    Flag = "StickyMenos",
-    Callback = function(Value)
-        stickyMenosEnabled = Value
-    end,
-})
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
-local stickyJotaroKujoEnabled = false
-
-
-player.CharacterAdded:Connect(function(char)
-    character = char
-    hrp = character:WaitForChild("HumanoidRootPart")
-end)
-
-
-local function getNearestJotaroKujo()
-    local nearest = nil
-    local shortestDistance = math.huge
-    for _, obj in pairs(workspace.Living:GetChildren()) do
-        if obj:IsA("Model")
-        and obj:FindFirstChild("Humanoid")
-        and obj:FindFirstChild("HumanoidRootPart")
-        and obj.Humanoid.Health > 0
-        and obj.Name == "Jotaro Kujo"
-        and obj ~= character then
-            local distance = (hrp.Position - obj.HumanoidRootPart.Position).Magnitude
-            if distance < shortestDistance then
-                shortestDistance = distance
-                nearest = obj
-            end
-        end
-    end
-    return nearest
-end
-
-
-RunService.RenderStepped:Connect(function()
-    if stickyJotaroKujoEnabled and hrp then
-        local target = getNearestJotaroKujo()
-        if target then
-            hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-        end
-    end
-end)
-
-
-local Toggle = Tab:CreateToggle({
-    Name = "Jotaro Kujo",
-    CurrentValue = false,
-    Flag = "StickyJotaroKujo",
-    Callback = function(Value)
-        stickyJotaroKujoEnabled = Value
-    end,
-})
 
 
 local Tab = Window:CreateTab("Auto Use Skills & Attacking M1")
@@ -1398,7 +528,7 @@ local function pressSkillKeys()
     end
 end
 
--- โจมตีปกติ (คลิกตรงกลางจอ)
+
 local function pressAttack()
     local screenSize = workspace.CurrentCamera.ViewportSize
     local centerX = screenSize.X / 2
@@ -1430,3 +560,72 @@ RunService.RenderStepped:Connect(function()
 end)
 
 
+local AutoKillTab = Window:CreateTab("Auto Kill", "sword")
+local AutoKillSection = AutoKillTab:CreateSection("Auto Kill Player")
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+local currentTarget = nil
+local autoKillEnabled = false
+
+-- รีอัปเดต character และ hrp เมื่อผู้เล่นฟื้นคืนชีพ
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- ฟังก์ชันหาผู้เล่นที่อยู่ใกล้ที่สุด
+local function getNearestPlayer()
+    local nearest = nil
+    local shortestDistance = math.huge
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if dist < shortestDistance then
+                shortestDistance = dist
+                nearest = player
+            end
+        end
+    end
+
+    return nearest
+end
+
+-- ฟังก์ชันเช็คว่าผู้เล่นตายหรือไม่
+local function isDead(player)
+    if not player.Character then return true end
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    return not humanoid or humanoid.Health <= 0
+end
+
+-- ระบบติดตามและวาร์ปไปหาผู้เล่นที่ยังไม่ตาย
+RunService.Heartbeat:Connect(function()
+    if not autoKillEnabled then return end
+
+    if not currentTarget or isDead(currentTarget) then
+        currentTarget = getNearestPlayer()
+        if not currentTarget then return end
+    end
+
+    if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
+        HumanoidRootPart.CFrame = currentTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
+    end
+end)
+
+AutoKillTab:CreateToggle({
+    Name = "Auto Kill Player Beta",
+    CurrentValue = false,
+    Flag = "AutoKill Player Beta",
+    Callback = function(state)
+        autoKillEnabled = state
+        if not state then
+            currentTarget = nil
+        end
+    end,
+})
