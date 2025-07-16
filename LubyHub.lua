@@ -1,3 +1,11 @@
+local allowedPlaceId = 8534845015
+
+if game.PlaceId ~= allowedPlaceId then
+    game.Players.LocalPlayer:Kick("This script can only be run in Sakura Stand.")
+    return
+end
+
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -114,7 +122,7 @@ function startAutoFarmBoxes()
 end
 
 autoFarmTab:CreateToggle({
-	Name = "Auto Farm Boxes & Barrels",
+	Name = "Auto Farm Level",
 	CurrentValue = false,
 	Callback = function(state)
 		isAutoFarmingBoxes = state
@@ -408,23 +416,23 @@ local Tab = Window:CreateTab("Monster & dummy ")
 local DummySection = Tab:CreateSection("Monster & dummy Section")
 
 local stickyEnemies = {
-    ["Dummy"] = true,
-    ["Attacking Dummy"] = true,
-    ["Blocking Dummy"] = true,
-    ["Counter Dummy"] = true,
-    ["Adjuchas"] = true,
-    ["Deku"] = true,
-    ["Toji"] = true,
-    ["Thug"] = true,
-    ["Spider Curse"] = true,
-    ["Mosquito Curse"] = true,
-    ["Bandit"] = true,
-    ["Frog Hollow"] = true,
-    ["Fishbone"] = true,
-    ["Glutton Curse"] = true,
-    ["Contorted Curse"] = true,
-    ["Menos"] = true,
-    ["Jotaro Kujo"] = true,
+    "Dummy",
+    "Attacking Dummy",
+    "Blocking Dummy",
+    "Counter Dummy",
+    "Adjuchas",
+    "Deku",
+    "Toji",
+    "Thug",
+    "Spider Curse",
+    "Mosquito Curse",
+    "Bandit",
+    "Frog Hollow",
+    "Fishbone",
+    "Glutton Curse",
+    "Contorted Curse",
+    "Menos",
+    "Jotaro Kujo",
 }
 
 local stickyEnabled = {}
@@ -440,26 +448,29 @@ player.CharacterAdded:Connect(function(char)
     hrp = character:WaitForChild("HumanoidRootPart")
 end)
 
-local function createStickyToggle(enemyName)
+-- ✅ สร้าง Toggle ตามลำดับ
+for _, name in ipairs(stickyEnemies) do
     Tab:CreateToggle({
-        Name = enemyName,
+        Name = name,
         CurrentValue = false,
-        Flag = "Sticky_" .. enemyName,
+        Flag = "Sticky_" .. name,
         Callback = function(state)
-            stickyEnabled[enemyName] = state
+            stickyEnabled[name] = state
         end,
     })
 end
 
-for name in pairs(stickyEnemies) do
-    createStickyToggle(name)
-end
-
+-- ✅ ลูปติดกาว NPC ตาม toggle ที่เปิด
 RunService.RenderStepped:Connect(function()
     for name, enabled in pairs(stickyEnabled) do
         if enabled then
             for _, obj in pairs(workspace.Living:GetChildren()) do
-                if obj:IsA("Model") and obj.Name == name and obj ~= character and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") and obj.Humanoid.Health > 0 then
+                if obj:IsA("Model")
+                and obj.Name == name
+                and obj ~= character
+                and obj:FindFirstChild("Humanoid")
+                and obj:FindFirstChild("HumanoidRootPart")
+                and obj.Humanoid.Health > 0 then
                     hrp.CFrame = obj.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
                     break
                 end
