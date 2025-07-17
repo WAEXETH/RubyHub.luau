@@ -1,10 +1,9 @@
 local allowedPlaceId = 8534845015
 
 if game.PlaceId ~= allowedPlaceId then
-    game.Players.LocalPlayer:Kick("This script can only be run in Sakura Stand.")
+    game.Players.LocalPlayer:Kick("This script can only be run in Sakura Stand By zazq_io")
     return
 end
-
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -21,9 +20,7 @@ local Window = Rayfield:CreateWindow({
 
 
 local autoFarmTab = Window:CreateTab("Auto Farm", "package")
-local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
 local autoFarmSection = autoFarmTab:CreateSection("Farm")
-local autoSellSection = autoSellTab:CreateSection("Sell")
 
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
@@ -133,6 +130,99 @@ autoFarmTab:CreateToggle({
 })
 
 
+local itemSection = autoFarmTab:CreateSection("Auto Collect Item")
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local workspaceItems = workspace:WaitForChild("Item")
+
+local ignoreNames = {"Box", "Chest", "Barrel"}
+local failedAttempts = {}
+
+local autoCollectEnabled = false
+
+
+local Toggle = autoFarmTab:CreateToggle({
+   Name = "Auto Collect Item",
+   CurrentValue = false,
+   Flag = "AutoItem",
+   Callback = function(Value)
+      autoCollectEnabled = Value
+   end,
+})
+
+-- เช็คชื่อที่ต้องข้าม
+local function isIgnored(itemName)
+    for _, word in ipairs(ignoreNames) do
+        if string.find(string.lower(itemName), string.lower(word)) then
+            return true
+        end
+    end
+    return false
+end
+
+-- ฟังก์ชันเก็บไอเทม
+local function tryCollect(item)
+    if not item:IsDescendantOf(workspace) then return end
+
+    local itemName = item.Name
+    failedAttempts[item] = failedAttempts[item] or 0
+    if failedAttempts[item] >= 3 then return end
+
+    local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if not prompt then return false end
+
+    local attempts = 0
+    while attempts < 3 do
+        if not item:IsDescendantOf(workspace) or not autoCollectEnabled then
+            return true
+        end
+
+        local connection = RunService.RenderStepped:Connect(function()
+            if item:IsDescendantOf(workspace) then
+                hrp.CFrame = item.CFrame + Vector3.new(0, 2, 0)
+            end
+        end)
+
+        pcall(function() prompt:InputHoldBegin() end)
+        task.wait(prompt.HoldDuration + 0.2)
+        pcall(function() prompt:InputHoldEnd() end)
+
+        connection:Disconnect()
+
+        if not item:IsDescendantOf(workspace) then
+            return true
+        end
+
+        attempts += 1
+    end
+
+    failedAttempts[item] = failedAttempts[item] + 1
+    return false
+end
+
+-- ลูปหลัก
+task.spawn(function()
+    while task.wait(0.5) do
+        if autoCollectEnabled then
+            for _, item in ipairs(workspaceItems:GetChildren()) do
+                if not isIgnored(item.Name) and failedAttempts[item] ~= 3 then
+                    tryCollect(item)
+                    task.wait(0.2)
+                end
+            end
+        end
+    end
+end)
+
+
+local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
+local autoSellSection = autoSellTab:CreateSection("Sell")
+
 local sellableItems = {
 	"Arrow", "Mysterious Camera", "Hamon Manual", "Rokakaka", "Stop Sign", "Stone Mask",
 	"Haunted Sword", "Spin Manual", "Barrel", "Bomu Bomu Devil Fruit",
@@ -239,7 +329,19 @@ local teleportList = {
 
 
 local plr = game.Players.LocalPlayer
-local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or plr.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
+for name, cframe in pairs(teleportList) do
+	teleportTab:CreateButton({
+		Name = name,
+		Callback = function()
+			local character = plr.Character or plr.CharacterAdded:Wait()
+			local hrp = character:WaitForChild("HumanoidRootPart")
+
+			if hrp then
+				hrp.CFrame = cframe
+			end
+		end
+	})
+end
 
 
 for name, cframe in pairs(teleportList) do
@@ -304,22 +406,25 @@ local npcTeleportList = {
     piknishi = CFrame.new(-193.988, -32.009, 1464.331),
 }
 
-
 local plr = game.Players.LocalPlayer
-local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or plr.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
 
+local function getHRP()
+    local character = plr.Character or plr.CharacterAdded:Wait()
+    return character:WaitForChild("HumanoidRootPart")
+end
 
 for name, cframe in pairs(npcTeleportList) do
-	npcTeleportTab:CreateButton({
-		Name = name,
-		Callback = function()
-			if hrp then
-				hrp.CFrame = cframe
-				
-			end
-		end
-	})
+    npcTeleportTab:CreateButton({
+        Name = name,
+        Callback = function()
+            local hrp = getHRP()
+            if hrp then
+                hrp.CFrame = cframe
+            end
+        end
+    })
 end
+
 
 
 local roninQuestTab = Window:CreateTab("Ronin Quest", "target")
@@ -327,7 +432,6 @@ local roninSection = roninQuestTab:CreateSection("Ronin Quest V2")
 
 
 local roninQuestTeleportList = {
-
     ["1"] = CFrame.new(-534.262878, -261.767517, -4447.94678, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["2"] = CFrame.new(7558.78906, -416.672913, -3887.48145, 0.923132539, 0.0497069918, -0.38125518, 0.0210493021, 0.983586729, 0.179203987, 0.383905202, -0.173454195, 0.906934619),
     ["3"] = CFrame.new(-8931.51953, 420.982635, 1407.76099, -0.0231808424, -0.0539431982, -0.998275042, 0.0529567339, 0.997075081, -0.0551080592, 0.998327851, -0.0541428216, -0.0202564001),
@@ -338,21 +442,23 @@ local roninQuestTeleportList = {
     ["8"] = CFrame.new(-6965.54248, -29.1699066, 1101.05481, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 }
 
-
 local plr = game.Players.LocalPlayer
-local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") or plr.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
 
+local function getHRP()
+    local character = plr.Character or plr.CharacterAdded:Wait()
+    return character:WaitForChild("HumanoidRootPart")
+end
 
 for number, cframe in pairs(roninQuestTeleportList) do
-	roninQuestTab:CreateButton({
-		Name = " TP " .. number,
-		Callback = function()
-			if hrp then
-				hrp.CFrame = cframe
-				
-			end
-		end
-	})
+    roninQuestTab:CreateButton({
+        Name = " TP " .. number,
+        Callback = function()
+            local hrp = getHRP()
+            if hrp then
+                hrp.CFrame = cframe
+            end
+        end
+    })
 end
 
 
@@ -491,7 +597,7 @@ local autoAttackEnabled = false
 
 -- สร้าง Toggle เปิด/ปิด Auto Skill
 local skillToggle = Tab:CreateToggle({
-    Name = "Auto Skill",
+    Name = "Auto Skill ",
     CurrentValue = false,
     Flag = "AutoSkillToggle",
     Callback = function(Value)
@@ -501,7 +607,7 @@ local skillToggle = Tab:CreateToggle({
 
 -- สร้าง Toggle เปิด/ปิด Auto Attack (คลิกเมาส์ซ้าย)
 local attackToggle = Tab:CreateToggle({
-    Name = "Auto Attack",
+    Name = "Auto Attack M1",
     CurrentValue = false,
     Flag = "AutoAttackToggle",
     Callback = function(Value)
