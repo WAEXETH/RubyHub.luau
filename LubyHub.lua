@@ -70,13 +70,14 @@ local function getAllValidPrompts_AutoFarm()
 	for _, v in ipairs(workspace:GetDescendants()) do
 		if v:IsA("ProximityPrompt") and v.Parent and v.Enabled then
 			local name = v.Parent.Name
-			if name == "Box" or name == "Barrel" then
+			if name == "Box" or name == "Barrel" or name == "BoxDrop" then
 				table.insert(results, v)
 			end
 		end
 	end
 	return results
 end
+
 
 local function collectItemsInWorkspace_AutoFarm()
 	if not workspace:FindFirstChild("Item") then return end
@@ -539,6 +540,8 @@ local stickyEnemies = {
     "Contorted Curse",
     "Menos",
     "Jotaro Kujo",
+    "Mimicry",
+    "The Red Mist",
 }
 
 local stickyEnabled = {}
@@ -554,7 +557,7 @@ player.CharacterAdded:Connect(function(char)
     hrp = character:WaitForChild("HumanoidRootPart")
 end)
 
--- ✅ สร้าง Toggle ตามลำดับ
+-- ✅ สร้าง Toggle ให้แต่ละชื่อ
 for _, name in ipairs(stickyEnemies) do
     Tab:CreateToggle({
         Name = name,
@@ -566,22 +569,28 @@ for _, name in ipairs(stickyEnemies) do
     })
 end
 
--- ✅ ลูปติดกาว NPC ตาม toggle ที่เปิด
+-- ✅ วาร์ปไปหาตัวที่ "เปิด toggle" และ "ใกล้ที่สุด"
 RunService.RenderStepped:Connect(function()
-    for name, enabled in pairs(stickyEnabled) do
-        if enabled then
-            for _, obj in pairs(workspace.Living:GetChildren()) do
-                if obj:IsA("Model")
-                and obj.Name == name
-                and obj ~= character
-                and obj:FindFirstChild("Humanoid")
-                and obj:FindFirstChild("HumanoidRootPart")
-                and obj.Humanoid.Health > 0 then
-                    hrp.CFrame = obj.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
-                    break
-                end
+    local closestTarget = nil
+    local closestDistance = math.huge
+
+    for _, obj in pairs(workspace.Living:GetChildren()) do
+        if obj:IsA("Model")
+        and obj ~= character
+        and obj:FindFirstChild("Humanoid")
+        and obj:FindFirstChild("HumanoidRootPart")
+        and obj.Humanoid.Health > 0
+        and stickyEnabled[obj.Name] then -- ✅ ตรวจว่าชื่อนี้ toggle อยู่
+            local dist = (obj.HumanoidRootPart.Position - hrp.Position).Magnitude
+            if dist < closestDistance then
+                closestDistance = dist
+                closestTarget = obj
             end
         end
+    end
+
+    if closestTarget then
+        hrp.CFrame = closestTarget.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
     end
 end)
 
@@ -676,6 +685,42 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+local VirtualInputManager = game:GetService("VirtualInputManager") 
+
+local autoParryEnabled = false
+local parryCooldown = 2.5
+local parryHoldTime = 3
+
+function autoParry()
+    while autoParryEnabled do
+        print("AutoParry: กดปุ่ม F ค้าง")
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        task.wait(parryHoldTime)
+        print("AutoParry: ปล่อยปุ่ม F")
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+        print("AutoParry: รอ cooldown")
+        task.wait(parryCooldown)
+    end
+end
+
+function toggleAutoParry(state)
+    print("toggleAutoParry called with", state)
+    autoParryEnabled = state
+    if autoParryEnabled then
+        task.spawn(autoParry)
+    end
+end
+
+-- Toggle UI
+local Toggle = Tab:CreateToggle({
+    Name = "Auto Parry Beta Farm only!",
+    CurrentValue = false,
+    Flag = "AutoParryToggle",
+    Callback = function(state)
+        toggleAutoParry(state)
+    end,
+})
+
 
 local AutoKillTab = Window:CreateTab("Auto Kill", "sword")
 local AutoKillSection = AutoKillTab:CreateSection("Auto Kill Player")
@@ -721,7 +766,6 @@ local function isDead(player)
     return not humanoid or humanoid.Health <= 0
 end
 
--- ระบบติดตามและวาร์ปไปหาผู้เล่นที่ยังไม่ตาย
 RunService.Heartbeat:Connect(function()
     if not autoKillEnabled then return end
 
