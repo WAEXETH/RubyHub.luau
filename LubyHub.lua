@@ -1,7 +1,7 @@
 local allowedPlaceId = 8534845015
 
 if game.PlaceId ~= allowedPlaceId then
-    game.Players.LocalPlayer:Kick("This script can only be run in Sakura Stand By zazq_io")
+    game.Players.LocalPlayer:Kick("This script can only be run in Sakura Stand")
     return
 end
 
@@ -11,11 +11,10 @@ local Window = Rayfield:CreateWindow({
 	Name = "Luby Hub By zazq_io",
 	Icon = "package",
 	LoadingTitle = "Load...you",
-	LoadingSubtitle = "wait...you",
+	LoadingSubtitle = "wait",
 	ShowText = "เปิดเมนู",
 	Theme = "Default",
 	ToggleUIKeybind = "K",
-	KeySystem = false
 })
 
 
@@ -363,48 +362,59 @@ local npcSection = npcTeleportTab:CreateSection(" NPC ")
 
 
 local npcTeleportList = {
-    AMM = CFrame.new(-236.787, -32.525, 1472.125),
-    Aubby = CFrame.new(-377.415, -32.228, 1827.396),
-    Blacko_Coffee = CFrame.new(-82.483, -116.37, 360.842),
-    Carmen = CFrame.new(-202.07, -264.768, -4251.815),
-    Cashier = CFrame.new(-3526.258, 736.75, -11586.988),
-    Chxmei = CFrame.new(-619.713, -32.527, 1921.901),
-    CragBlock = CFrame.new(-695.705, -31.354, 1651.713),
-    Drago = CFrame.new(-96.575, -32.013, 1676.773),
-    Ego = CFrame.new(-235.857, -32.523, 1404.031),
-    Eyegonis = CFrame.Angles(0, math.rad(-58), 0) + Vector3.new(-7409.198, -31.518, 1104.279),
-    Geto = CFrame.new(-490.283, -32.493, 1837.344),
-    Gojo = CFrame.new(-575.494, -30.922, 1415.523),
-    Harold = CFrame.new(-21.264, -31.117, 1513.454),
-    Hikarishi_XL = CFrame.new(-508.402, -32.964, 1504.683),
-    Isagi = CFrame.new(-711.296, -32.493, 1287.708),
-    Jeffy = CFrame.new(-225.047, -31.809, 1438.867),
-    KFCKuzma = CFrame.new(-3502.495, 736.76, -11563.025),
-    King_Bon = CFrame.new(634.389, 102.49, -1335.855),
-    Kisuke = CFrame.new(-281.293, -30.838, 1228.765),
-    Kusakabe = CFrame.new(-247.521, -32.648, 1744.211),
-    LanternGuy = CFrame.new(-527.176, -264.768, -4282.515),
-    LibraryBook = CFrame.new(-93.21, -115.17, 331.017),
-    Milkytillys = CFrame.new(-233.689, -32.058, 1439.916),
-    Momo = CFrame.new(-3634.823, 614.127, 5430.563),
-    N4Animation = CFrame.new(11.162, -32.737, 1612.887),
-    NameClan = CFrame.new(-430.454, -32.644, 1131.485),
-    Olivier = CFrame.new(-394.915, -264.763, -4488.778),
-    PuddingBumby = CFrame.new(-184.242, -32.158, 1451.031),
-    Q3Prototype_Bon = CFrame.new(-637.299, 4.01, -345.199),
-    Q3Prototype2 = CFrame.new(16.771, -32.456, 1877.99),
-    Q3Prototype3 = CFrame.new(687.85, 104.001, -1381.4),
-    Reevulu = CFrame.new(753.35, 102.5, -1372.55),
-    Ronin_Book = CFrame.new(-3765.174, -32.685, -1274.375),
-    RoninDialogue = CFrame.new(-258.032, -71.28, 13042.168),
-    Simplrr = CFrame.new(-397.289, -30.792, 1825.063),
-    Sukuna = CFrame.new(-215.827, -32.493, 1880.099),
-    Syrentia = CFrame.new(-203.474, -31.65, 1440.17),
-    TrueSwordsMan = CFrame.new(57.509, -32.537, 1576.532),
-    TurboGranny_Bon = CFrame.new(-3686.247, 610.462, 5376.722),
-    Vergilius = CFrame.new(-694.137, -31.12, 1585.219),
-    buttersky20000 = CFrame.new(-2067.959, -289.603, -4685.778),
-    piknishi = CFrame.new(-193.988, -32.009, 1464.331),
+    CFrame.new(-9586.11914, 805.007996, 9422.08398, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9497.18457, 805.220459, 9039.4209, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(-82.4833221, -116.369576, 360.841919, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(-202.069824, -264.767517, -4251.81494, 0, 0, -1, 0, 1, 0, 1, 0, 0),
+    CFrame.new(-3526.25781, 736.750122, -11586.9883, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9855.39941, 834.228638, 9464.40527, 0.971264243, 3.80203128e-05, 0.238003805, 0.0425439477, 0.983866215, -0.173773795, -0.234170511, 0.178905904, 0.955592394),
+    CFrame.new(-9800.01172, 810.658325, 8786.83203, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(13419.5889, 1602.41528, -2919.8252, 0, 0, -1, 0, 1, 0, 1, 0, 0),
+    CFrame.new(-9338.46875, 805.212585, 9303.79297, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-10030.2764, 820.817505, 9211.25879, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(-10112.4961, 805.48407, 8850.9873, -0.512227774, 0, -0.858849585, 0, 1, 0, 0.858849585, 0, -0.512227774),
+    CFrame.new(-9885.08203, 869.695435, 9693.59961, 0.422592998, 0, 0.906319618, 0, 1, 0, -0.906319618, 0, 0.422592998),
+    CFrame.new(-9226.83984, 810.660217, 8778.01758, -0.906296611, 0, 0.422642082, 0, 1, 0, -0.422642082, 0, -0.906296611),
+    CFrame.new(-9303.10938, 818.50824, 9531.81934, -0.99619168, 8.70898447e-08, -0.0871905237, 7.9800337e-08, 1, 8.70898447e-08, 0.0871905237, 7.9800337e-08, -0.99619168),
+    CFrame.new(-10118.998, 807.865234, 8828.19824, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-8955.53125, 561.163269, 7619.96191, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(-9670.7373, 805.208252, 9053.93945, 0, 0, -1, 0, 1, 0, 1, 0, 0),
+    CFrame.new(3641.03394, -232.919495, 4517.34375, 0, 0, -1, 0, 1, 0, 1, 0, 0),
+    CFrame.new(-10173.3057, 820.850159, 9219.16211, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9852.97754, 806.684021, 8656.24707, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-3502.49512, 736.760132, -11563.0254, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(634.38916, 102.489998, -1335.85522, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-9447.86426, 796.520447, 9429.20898, 0.912216544, 0, 0.409708411, 0, 1, 0, -0.409708411, 0, 0.912216544),
+    CFrame.new(-9685.89062, 806.763489, 9209.16797, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9856.35156, 805.00824, 9162.38086, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-9146.58496, 805.052551, 8838.41504, 0.79861635, -0, -0.601840496, 0, 1, -0, 0.601840496, 0, 0.79861635),
+    CFrame.new(-527.175781, -264.767517, -4282.51465, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-93.2099991, -115.169998, 331.016998, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-9853.67969, 805.101318, 8686.65625, -0.866007447, 0, 0.500031412, 0, 1, 0, -0.500031412, 0, -0.866007447),
+    CFrame.new(-11482.543, 418.379669, 8789.37598, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-3634.82324, 614.126648, 5430.56348, 0.999098122, 0, 0.0424608514, 0, 1, 0, -0.0424608514, 0, 0.999098122),
+    CFrame.new(-10153.4424, 821.075378, 8967.65527, -1.1920929e-07, -0, -1.00000012, 0, 1, -0, 1.00000012, 0, -1.1920929e-07),
+    CFrame.new(-10090.6953, 807.812317, 8872.9502, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-394.915009, -264.763, -4488.77783, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9858.06836, 805.869568, 8638.28125, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-637.299072, 4.01001358, -345.199463, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9238.39062, 805.008301, 9201.88672, 0.707134247, 0, 0.707079291, 0, 1, 0, -0.707079291, 0, 0.707134247),
+    CFrame.new(687.850037, 104.001007, -1381.40002, 0, 0, -1, 0, 1, 0, 1, 0, 0),
+    CFrame.new(753.350037, 102.5, -1372.55005, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-3765.17407, -32.6850014, -1274.375, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-258.700195, -72.0999985, 13042.0996, 0, 0, -1, 0, 1, 0, 1, 0, 0),
+    CFrame.new(-10140.6719, 820.815491, 9297.62891, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-9568.89453, 805.007996, 9535.00781, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(-9514.4707, 806.02533, 9039.57031, 0, 0, -1, 0, 1, 0, 1, 0, 00),
+    CFrame.new(-9896.3916, 829.425354, 9459.84863, -0.499959469, 0, -0.866048813, 0, 1, 0, 0.866048813, 0, -0.499959469),
+    CFrame.new(3802.38403, -232.919495, 4574.19971, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-9865.37988, 806.575623, 8677.53906, 0.573598742, 0, 0.81913656, 0, 1, 0, -0.81913656, 0, 0.573598742),
+    CFrame.new(-9419.27441, 810.546387, 9010.62793, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-3686.24707, 610.462036, 5376.72168, -0.999098182, 0, -0.0424608514, 0, 1, 0, 0.0424608514, 0, -0.999098182),
+    CFrame.new(-9047.70312, 805.00824, 8950.38379, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    CFrame.new(-10893.9297, 573.020264, 8478.0625, 0, 0, 1, 0, 1, -0, -1, 0, 0),
+    CFrame.new(-8179.33203, 837.377014, 6505.67139, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    CFrame.new(-9874.85742, 805.684509, 8645.39746, -0.906296611, 0, 0.422642082, 0, 1, 0, -0.422642082, 0, -0.906296611)
 }
 
 local plr = game.Players.LocalPlayer
@@ -426,6 +436,36 @@ for name, cframe in pairs(npcTeleportList) do
     })
 end
 
+
+local npcSection = npcTeleportTab:CreateSection(" NPC Special ")
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") or player.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
+
+local function teleportToNPCHead(npcName)
+    local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild(npcName)
+    if npc and npc:FindFirstChild("Head") then
+        hrp.CFrame = npc.Head.CFrame + Vector3.new(0, 3, 0)
+        print("✅ Teleported to " .. npcName)
+    else
+        warn("❌ " .. npcName .. " not found.")
+    end
+end
+
+npcTeleportTab:CreateButton({
+    Name = "Teleport  Baiken",
+    Callback = function()
+        teleportToNPCHead("Baiken")
+    end,
+})
+
+npcTeleportTab:CreateButton({
+    Name = "Teleport  Kuzma",
+    Callback = function()
+        teleportToNPCHead("Kuzma")
+    end,
+})
 
 
 local roninQuestTab = Window:CreateTab("Ronin Quest", "target")
@@ -542,6 +582,7 @@ local stickyEnemies = {
     "Jotaro Kujo",
     "Mimicry",
     "The Red Mist",
+    "Monkey",
 }
 
 local stickyEnabled = {}
@@ -693,18 +734,14 @@ local parryHoldTime = 3
 
 function autoParry()
     while autoParryEnabled do
-        print("AutoParry: กดปุ่ม F ค้าง")
         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
         task.wait(parryHoldTime)
-        print("AutoParry: ปล่อยปุ่ม F")
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        print("AutoParry: รอ cooldown")
         task.wait(parryCooldown)
     end
 end
 
 function toggleAutoParry(state)
-    print("toggleAutoParry called with", state)
     autoParryEnabled = state
     if autoParryEnabled then
         task.spawn(autoParry)
