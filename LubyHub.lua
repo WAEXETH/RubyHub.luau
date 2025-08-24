@@ -982,3 +982,247 @@ AutoKillTab:CreateSlider({
         attackDistance = value
     end,
 })
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ค่าเริ่มต้น Roblox
+local defaultWalkSpeed = 16
+local defaultJumpPower = 50
+
+-- ค่าที่ปรับได้
+local walkSpeed = 100
+local jumpPower = 150
+local speedEnabled = false
+local jumpEnabled = false
+
+-- ฟังก์ชันปรับค่า Humanoid
+local function applySpeed()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    if speedEnabled then
+        humanoid.WalkSpeed = walkSpeed
+    else
+        humanoid.WalkSpeed = defaultWalkSpeed
+    end
+
+    if jumpEnabled then
+        humanoid.JumpPower = jumpPower
+    else
+        humanoid.JumpPower = defaultJumpPower
+    end
+end
+
+-- Loop คงค่า
+RunService.Heartbeat:Connect(function()
+    applySpeed()
+end)
+
+-- รีเซ็ตเวลาเกิดใหม่
+LocalPlayer.CharacterAdded:Connect(function(char)
+    task.wait(0.1) -- รอ Humanoid โหลด
+    applySpeed()
+end)
+
+-- UI: วิ่งเร็ว
+AutoKillTab:CreateToggle({
+    Name = "Enable Speed",
+    CurrentValue = false,
+    Flag = "SpeedToggle",
+    Callback = function(state)
+        speedEnabled = state
+        applySpeed()
+    end,
+})
+
+AutoKillTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {16, 300},
+    Increment = 1,
+    CurrentValue = walkSpeed,
+    Flag = "WalkSpeedSlider",
+    Callback = function(value)
+        walkSpeed = value
+    end,
+})
+
+-- UI: กระโดดสูง
+AutoKillTab:CreateToggle({
+    Name = "Enable High Jump",
+    CurrentValue = false,
+    Flag = "JumpToggle",
+    Callback = function(state)
+        jumpEnabled = state
+        applySpeed()
+    end,
+})
+
+AutoKillTab:CreateSlider({
+    Name = "Jump Power",
+    Range = {50, 300},
+    Increment = 1,
+    CurrentValue = jumpPower,
+    Flag = "JumpPowerSlider",
+    Callback = function(value)
+        jumpPower = value
+    end,
+})
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+local clickTPEnabled = false
+local tpOffset = Vector3.new(0, 3, 0) -- ยกตัวเล็กน้อยให้ไม่ติดพื้น
+
+-- รีอัปเดต character และ HRP
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- ฟังก์ชันวาร์ป
+local function teleportTo(position)
+    if HumanoidRootPart then
+        HumanoidRootPart.CFrame = CFrame.new(position + tpOffset)
+    end
+end
+
+-- ตรวจสอบคลิกเมาส์
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if not clickTPEnabled then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mouse = LocalPlayer:GetMouse()
+        if mouse.Target then
+            teleportTo(mouse.Hit.Position)
+        end
+    end
+end)
+
+-- UI Toggle เปิด/ปิด
+AutoKillTab:CreateToggle({
+    Name = "Click Teleport",
+    CurrentValue = false,
+    Flag = "ClickTP",
+    Callback = function(state)
+        clickTPEnabled = state
+    end,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ค่าตั้งต้น
+local flyEnabled = false
+local flySpeed = 50
+
+-- ฟังก์ชันบินง่าย ๆ
+local function flyCharacter()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local direction = Vector3.new(0,0,0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + hrp.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - hrp.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - hrp.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + hrp.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0,1,0) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0,1,0) end
+
+    -- ถ้ามีทิศทาง ให้เคลื่อนที่
+    if direction.Magnitude > 0 then
+        hrp.Velocity = direction.Unit * flySpeed
+    else
+        hrp.Velocity = Vector3.new(0,0,0)
+    end
+end
+
+-- Loop ควบคุมบิน
+RunService.Heartbeat:Connect(function()
+    if flyEnabled then
+        flyCharacter()
+    end
+end)
+
+-- UI: Toggle เปิด/ปิดบิน
+AutoKillTab:CreateToggle({
+    Name = "Enable Fly",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(state)
+        flyEnabled = state
+    end,
+})
+
+-- UI: Slider ปรับความเร็วบิน
+AutoKillTab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {10, 200},
+    Increment = 1,
+    CurrentValue = flySpeed,
+    Flag = "FlySpeedSlider",
+    Callback = function(value)
+        flySpeed = value
+    end,
+})
+
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local noclipEnabled = false
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- ฟังก์ชันเปิด/ปิด NoClip
+local function setNoClip(state)
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.CanCollide = not state
+        end
+    end
+end
+
+-- Loop อัปเดต NoClip เผื่อส่วนใหม่เกิด
+RunService.Heartbeat:Connect(function()
+    if noclipEnabled then
+        setNoClip(true)
+    end
+end)
+
+-- รีเซ็ตเมื่อเกิดใหม่
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+    if noclipEnabled then
+        setNoClip(true)
+    end
+end)
+
+-- UI: Toggle เปิด/ปิด NoClip
+AutoKillTab:CreateToggle({
+    Name = "NoClip",
+    CurrentValue = false,
+    Flag = "NoClipToggle",
+    Callback = function(state)
+        noclipEnabled = state
+        setNoClip(state)
+    end,
+})
