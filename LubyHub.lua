@@ -1,7 +1,7 @@
 local allowedPlaceId = 8534845015
 
 if game.PlaceId ~= allowedPlaceId then
-    game.Players.LocalPlayer:Kick("This script can only be run in Sakura Stand")
+    game.Players.LocalPlayer:Kick("script Sakura Stand")
     return
 end
 
@@ -593,6 +593,9 @@ local stickyEnemies = {
     "Jotaro Kujo",
     "Mimicry",
     "The Red Mist",
+    "Dog",
+    'Monkey'
+     
 }
 
 local stickyEnabled = {}
@@ -736,35 +739,127 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local VirtualInputManager = game:GetService("VirtualInputManager") 
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 local autoParryEnabled = false
 local parryCooldown = 2.5
-local parryHoldTime = 3
+local parryHoldTime = 1.5 -- เวลาค้าง F ก่อนปล่อย
+local lastParry = 0
 
-function autoParry()
-    while autoParryEnabled do
+-- Detect range
+local detectRadius = 15
+local activeThreats = {}
+local isHolding = false
+
+-- เริ่มกดค้าง F
+local function startHold()
+    if not isHolding then
         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        task.wait(parryHoldTime)
+        isHolding = true
+    end
+end
+
+-- ปล่อย F = ทำ Parry
+local function releaseParry()
+    if isHolding then
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        task.wait(parryCooldown)
+        isHolding = false
+        lastParry = tick()
     end
 end
 
-function toggleAutoParry(state)
-    autoParryEnabled = state
-    if autoParryEnabled then
-        task.spawn(autoParry)
+-- ตรวจหาใกล้ตัว
+local function detectThreats()
+    for obj, _ in pairs(activeThreats) do
+        if obj.Parent and obj:IsA("BasePart") then
+            local distance = (obj.Position - humanoidRootPart.Position).Magnitude
+            if distance <= detectRadius then
+                return true
+            end
+        else
+            activeThreats[obj] = nil
+        end
     end
+    return false
 end
 
--- Toggle UI
+-- ฟัง Event เมื่อมี object โผล่มา
+workspace.DescendantAdded:Connect(function(obj)
+    if obj:IsA("BasePart") then
+        local name = obj.Name:lower()
+        if name:find("hitbox") or name:find("projectile") then
+            activeThreats[obj] = true
+            obj.AncestryChanged:Connect(function(_, parent)
+                if not parent then
+                    activeThreats[obj] = nil
+                end
+            end)
+        end
+    end
+end)
+
+-- Loop ตรวจจับ
+RunService.Heartbeat:Connect(function()
+    if autoParryEnabled and humanoidRootPart then
+        local now = tick()
+
+        -- เริ่มกดค้างไว้ก่อน
+        if not isHolding and (now - lastParry) >= parryCooldown then
+            startHold()
+        end
+
+        -- ถ้ามี Threat เข้ามาใกล้ → ปล่อยเพื่อ Parry
+        if isHolding and detectThreats() then
+            releaseParry()
+        end
+    else
+        -- ถ้าปิดระบบ → ปล่อยปุ่ม F ถ้าค้างอยู่
+        if isHolding then
+            releaseParry()
+        end
+    end
+end)
+
+-- UI Toggle
 local Toggle = Tab:CreateToggle({
-    Name = "Auto Parry Beta Farm only!",
+    Name = "Auto Parry v2",
     CurrentValue = false,
-    Flag = "AutoParryToggle",
+    Flag = "AutoParrySmart",
     Callback = function(state)
-        toggleAutoParry(state)
+        autoParryEnabled = state
+    end,
+})
+
+-- Slider Cooldown
+local SliderCooldown = Tab:CreateSlider({
+    Name = "Parry Cooldown",
+    Range = {0.2, 5},
+    Increment = 0.1,
+    Suffix = "s",
+    CurrentValue = parryCooldown,
+    Flag = "ParryCooldownSlider",
+    Callback = function(value)
+        parryCooldown = value
+    end,
+})
+
+-- Slider Detect Radius
+local SliderDetect = Tab:CreateSlider({
+    Name = "Detect Range",
+    Range = {5, 50},
+    Increment = 1,
+    Suffix = " studs",
+    CurrentValue = detectRadius,
+    Flag = "DetectRadiusSlider",
+    Callback = function(value)
+        detectRadius = value
     end,
 })
 
@@ -781,30 +876,16 @@ local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
 local currentTarget = nil
 local autoKillEnabled = false
+local attackDistance = 4
+
+-- โหมด: "Nearest" หรือ "LowestHealth"
+local killMode = "Nearest"
 
 -- รีอัปเดต character และ hrp เมื่อผู้เล่นฟื้นคืนชีพ
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
     HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
 end)
-
--- ฟังก์ชันหาผู้เล่นที่อยู่ใกล้ที่สุด
-local function getNearestPlayer()
-    local nearest = nil
-    local shortestDistance = math.huge
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if dist < shortestDistance then
-                shortestDistance = dist
-                nearest = player
-            end
-        end
-    end
-
-    return nearest
-end
 
 -- ฟังก์ชันเช็คว่าผู้เล่นตายหรือไม่
 local function isDead(player)
@@ -813,27 +894,91 @@ local function isDead(player)
     return not humanoid or humanoid.Health <= 0
 end
 
-RunService.Heartbeat:Connect(function()
-    if not autoKillEnabled then return end
+-- ฟังก์ชันหาผู้เล่นที่ใกล้ที่สุด
+local function getNearestPlayer()
+    local nearest = nil
+    local shortestDistance = math.huge
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                local dist = (HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                if dist < shortestDistance then
+                    shortestDistance = dist
+                    nearest = player
+                end
+            end
+        end
+    end
+    return nearest
+end
 
-    if not currentTarget or isDead(currentTarget) then
+-- ฟังก์ชันหาผู้เล่นที่เลือดน้อยที่สุด
+local function getLowestHealthPlayer()
+    local lowest = nil
+    local lowestHealth = math.huge
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 and humanoid.Health < lowestHealth then
+                lowestHealth = humanoid.Health
+                lowest = player
+            end
+        end
+    end
+    return lowest
+end
+
+-- Loop หลัก
+RunService.Heartbeat:Connect(function()
+    if not autoKillEnabled or not HumanoidRootPart then return end
+
+    if killMode == "Nearest" then
         currentTarget = getNearestPlayer()
-        if not currentTarget then return end
+    elseif killMode == "LowestHealth" then
+        currentTarget = getLowestHealthPlayer()
     end
 
+    -- วาร์ปไปหาเป้าหมาย
     if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-        HumanoidRootPart.CFrame = currentTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
+        local targetHRP = currentTarget.Character.HumanoidRootPart
+        HumanoidRootPart.CFrame = targetHRP.CFrame * CFrame.new(0, 0, attackDistance)
     end
 end)
 
+-- UI: Toggle เปิดปิด Auto Kill
 AutoKillTab:CreateToggle({
-    Name = "Auto Kill Player Beta",
+    Name = "Auto Kill Player",
     CurrentValue = false,
-    Flag = "AutoKill Player Beta",
+    Flag = "AutoKillV2",
     Callback = function(state)
         autoKillEnabled = state
         if not state then
             currentTarget = nil
         end
+    end,
+})
+
+-- UI: Dropdown เลือกโหมด
+AutoKillTab:CreateDropdown({
+    Name = "Select Kill Mode",
+    Options = {"Nearest", "LowestHealth"},
+    CurrentOption = {"Nearest"},
+    Flag = "KillModeDropdown",
+    Callback = function(option)
+        killMode = option[1]
+        print("Kill mode set to:", killMode)
+    end,
+})
+
+-- UI: Slider ปรับระยะโจมตี
+AutoKillTab:CreateSlider({
+    Name = "Attack Distance",
+    Range = {2, 10},
+    Increment = 0.5,
+    CurrentValue = attackDistance,
+    Flag = "AttackDistanceSlider",
+    Callback = function(value)
+        attackDistance = value
     end,
 })
