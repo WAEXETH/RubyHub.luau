@@ -1,9 +1,11 @@
+
 local allowedPlaceId = 8534845015
 
 if game.PlaceId ~= allowedPlaceId then
     game.Players.LocalPlayer:Kick("script Sakura Stand")
     return
 end
+
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -19,205 +21,155 @@ local Window = Rayfield:CreateWindow({
 
 
 local autoFarmTab = Window:CreateTab("Auto Farm", "package")
-local autoFarmSection = autoFarmTab:CreateSection("Farm")
+local itemSection = autoFarmTab:CreateSection("Auto Farm")
 
-local plr = game.Players.LocalPlayer
-local char = plr.Character or plr.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
-local isAutoFarmingBoxes = false
+local plr = Players.LocalPlayer
+local character = plr.Character or plr.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+
 local E_HOLD_TIME = 3
 local EXCLUDED_ITEM_INDEX = 7
+local ignoreNames = {"Box", "Chest", "Barrel"} 
+local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
+
+-- Control variables
+local autoFarmEnabled = false
+local autoCollectEnabled = false
 local EXCLUDED_ITEM = nil
+local failedAttempts = {}
 
+-- Update character references
+local function updateCharacter()
+	character = plr.Character or plr.CharacterAdded:Wait()
+	hrp = character:WaitForChild("HumanoidRootPart", 5)
+end
+plr.CharacterAdded:Connect(updateCharacter)
 
-local function setupCharacterAutoFarm()
-	if plr.Character then
-		hrp = plr.Character:WaitForChild("HumanoidRootPart", 5)
-	end
-
-	plr.CharacterAdded:Connect(function(char)
-		hrp = char:WaitForChild("HumanoidRootPart", 5)
-		if isAutoFarmingBoxes then
-			task.wait(1)
-			startAutoFarmBoxes()
+-- Check if item should be ignored (Auto Collect)
+local function isIgnored(itemName)
+	for _, word in ipairs(ignoreNames) do
+		if string.lower(itemName) == string.lower(word) then
+			return true
 		end
-	end)
+	end
+	return false
 end
-setupCharacterAutoFarm()
 
+-- Check if item is a Level-Up item
+local function isLevelItem(itemName)
+	for _, word in ipairs(LEVEL_ITEM_NAMES) do
+		if string.lower(itemName) == string.lower(word) then
+			return true
+		end
+	end
+	return false
+end
 
-local function holdE_AutoFarm(prompt)
+-- Hold ProximityPrompt
+local function holdPrompt(prompt)
 	if not prompt then return end
-	VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+	pcall(function() prompt:InputHoldBegin() end)
 	task.wait(prompt.HoldDuration or E_HOLD_TIME)
-	VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+	pcall(function() prompt:InputHoldEnd() end)
 end
 
-local function collectPrompt_AutoFarm(prompt)
-	if not prompt or not prompt:IsA("ProximityPrompt") or not prompt.Parent then return end
-	if not hrp then return end
+-- Collect a single prompt
+local function collectPrompt(prompt)
+	if not prompt or not prompt.Parent or not hrp then return end
 	hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
-	task.wait(0.3)
-	holdE_AutoFarm(prompt)
+	task.wait(0.05)
+	holdPrompt(prompt)
 end
 
-local function getAllValidPrompts_AutoFarm()
+-- Get valid Level-Up prompts
+local function getValidLevelPrompts()
 	local results = {}
-	for _, v in ipairs(workspace:GetDescendants()) do
-		if v:IsA("ProximityPrompt") and v.Parent and v.Enabled then
-			local name = v.Parent.Name
-			if name == "Box" or name == "Barrel" or name == "BoxDrop" then
-				table.insert(results, v)
-			end
+	for _, v in ipairs(Workspace:GetDescendants()) do
+		if v:IsA("ProximityPrompt") and v.Parent and v.Enabled and isLevelItem(v.Parent.Name) then
+			table.insert(results, v)
 		end
 	end
 	return results
 end
 
+-- Try collecting a single item (Auto Collect)
+local function tryCollectItem(item)
+	if not item:IsDescendantOf(Workspace) then return false end
+	if isLevelItem(item.Name) then return false end -- ข้าม Level items
+	if failedAttempts[item] and failedAttempts[item] >= 3 then return false end
 
-local function collectItemsInWorkspace_AutoFarm()
-	if not workspace:FindFirstChild("Item") then return end
-	if EXCLUDED_ITEM == nil then
-		local children = workspace.Item:GetChildren()
-		if #children >= EXCLUDED_ITEM_INDEX then
-			EXCLUDED_ITEM = children[EXCLUDED_ITEM_INDEX]
+	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if not prompt or not prompt.Enabled then return false end
+
+	local attempts = 0
+	while attempts < 3 do
+		if not item:IsDescendantOf(Workspace) or not autoCollectEnabled then
+			return true
 		end
-	end
-	for _, item in ipairs(workspace.Item:GetChildren()) do
-		if item and item ~= EXCLUDED_ITEM then
-			local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-			if prompt then
-				collectPrompt_AutoFarm(prompt)
-				task.wait(1)
-			end
+
+		hrp.CFrame = item.CFrame + Vector3.new(0, 2, 0)
+		pcall(function() prompt:InputHoldBegin() end)
+		task.wait(prompt.HoldDuration + 0.05)
+		pcall(function() prompt:InputHoldEnd() end)
+
+		if not item:IsDescendantOf(Workspace) then
+			return true
 		end
+		attempts += 1
 	end
+
+	failedAttempts[item] = (failedAttempts[item] or 0) + 1
+	return false
 end
 
-function startAutoFarmBoxes()
-	task.spawn(function()
-		while isAutoFarmingBoxes do
-			if not hrp then
-				task.wait(1)
-			else
-				local prompts = getAllValidPrompts_AutoFarm()
-				if #prompts > 0 then
-					for _, p in ipairs(prompts) do
-						if not isAutoFarmingBoxes then break end
-						collectPrompt_AutoFarm(p)
-						task.wait(1.2)
-					end
+-- Main Auto Loop
+task.spawn(function()
+	while true do
+		task.wait(0.1)
+
+		-- Auto Farm Level
+		if autoFarmEnabled then
+			for _, prompt in ipairs(getValidLevelPrompts()) do
+				if not autoFarmEnabled then break end
+				collectPrompt(prompt)
+				task.wait(0.05)
+			end
+		end
+
+		-- Auto Collect Items
+		if autoCollectEnabled and Workspace:FindFirstChild("Item") then
+			for _, item in ipairs(Workspace.Item:GetChildren()) do
+				if not isIgnored(item.Name) then
+					tryCollectItem(item)
+					task.wait(0.05)
 				end
-				collectItemsInWorkspace_AutoFarm()
-				task.wait(2.5)
 			end
 		end
-	end)
-end
+	end
+end)
 
+-- Toggles
 autoFarmTab:CreateToggle({
 	Name = "Auto Farm Level",
 	CurrentValue = false,
 	Callback = function(state)
-		isAutoFarmingBoxes = state
-		if state then
-			startAutoFarmBoxes()
-		end
+		autoFarmEnabled = state
 	end
 })
 
-
-local itemSection = autoFarmTab:CreateSection("Auto Collect Item")
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-local workspaceItems = workspace:WaitForChild("Item")
-
-local ignoreNames = {"Box", "Chest", "Barrel"}
-local failedAttempts = {}
-
-local autoCollectEnabled = false
-
-
-local Toggle = autoFarmTab:CreateToggle({
-   Name = "Auto Collect Item",
-   CurrentValue = false,
-   Flag = "AutoItem",
-   Callback = function(Value)
-      autoCollectEnabled = Value
-   end,
+autoFarmTab:CreateToggle({
+	Name = "Auto Collect Item",
+	CurrentValue = false,
+	Callback = function(state)
+		autoCollectEnabled = state
+	end
 })
 
--- เช็คชื่อที่ต้องข้าม
-local function isIgnored(itemName)
-    for _, word in ipairs(ignoreNames) do
-        if string.find(string.lower(itemName), string.lower(word)) then
-            return true
-        end
-    end
-    return false
-end
-
--- ฟังก์ชันเก็บไอเทม
-local function tryCollect(item)
-    if not item:IsDescendantOf(workspace) then return end
-
-    local itemName = item.Name
-    failedAttempts[item] = failedAttempts[item] or 0
-    if failedAttempts[item] >= 3 then return end
-
-    local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-    if not prompt then return false end
-
-    local attempts = 0
-    while attempts < 3 do
-        if not item:IsDescendantOf(workspace) or not autoCollectEnabled then
-            return true
-        end
-
-        local connection = RunService.RenderStepped:Connect(function()
-            if item:IsDescendantOf(workspace) then
-                hrp.CFrame = item.CFrame + Vector3.new(0, 2, 0)
-            end
-        end)
-
-        pcall(function() prompt:InputHoldBegin() end)
-        task.wait(prompt.HoldDuration + 0.2)
-        pcall(function() prompt:InputHoldEnd() end)
-
-        connection:Disconnect()
-
-        if not item:IsDescendantOf(workspace) then
-            return true
-        end
-
-        attempts += 1
-    end
-
-    failedAttempts[item] = failedAttempts[item] + 1
-    return false
-end
-
--- ลูปหลัก
-task.spawn(function()
-    while task.wait(0.5) do
-        if autoCollectEnabled then
-            for _, item in ipairs(workspaceItems:GetChildren()) do
-                if not isIgnored(item.Name) and failedAttempts[item] ~= 3 then
-                    tryCollect(item)
-                    task.wait(0.2)
-                end
-            end
-        end
-    end
-end)
 
 
 local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
@@ -232,6 +184,7 @@ local sellableItems = {
 local sellToggleRunning = false
 local sellToggleTask = nil
 
+-- Function to sell all items in backpack
 local function autoSellBackpackFast()
 	local backpack = plr:FindFirstChild("Backpack")
 	if not backpack then return end
@@ -246,43 +199,54 @@ local function autoSellBackpackFast()
 		end
 		if count > 0 then
 			for i = 1, count do
-				sellRemote:FireServer(itemName)
+				pcall(function()
+					sellRemote:FireServer(itemName)
+				end)
 				task.wait(0.05)
 			end
 		end
 	end
 end
 
-local function autoSellAndTalk()
+-- Function to interact with NPC via ProximityPrompt
+local function interactNPC(npc)
+	if not npc or not npc:IsDescendantOf(workspace) then return end
+	local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
+	if prompt then
+		-- กด prompt โดยไม่วาร์ป
+		pcall(function() prompt:InputHoldBegin() end)
+		task.wait(prompt.HoldDuration or 1.5)
+		pcall(function() prompt:InputHoldEnd() end)
+		return true
+	end
+	return false
+end
+
+-- Main Auto Sell Loop
+local function autoSellLoop()
 	sellToggleTask = task.spawn(function()
 		while sellToggleRunning do
+			-- หา NPC อัปเดตใหม่ทุกครั้ง
 			local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
-			if npc and npc:FindFirstChildOfClass("ProximityPrompt") then
-				local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
-				hrp.CFrame = CFrame.new(-619.713013, -32.5270004, 1921.901)
-				task.wait(0.5)
-				VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-				task.wait(prompt.HoldDuration or 1.5)
-				VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-				print("🗨️ ")
+			if npc then
+				interactNPC(npc)
+				autoSellBackpackFast()
 			else
-				warn("❌ ")
+				warn("❌ NPC 'Chxmei' ไม่พบ")
 			end
-
-			autoSellBackpackFast()
-			task.wait(5)
+			task.wait(3) -- รอ 3 วินาที ก่อนเช็คใหม่
 		end
 	end)
 end
 
-
+-- Toggle
 autoSellTab:CreateToggle({
 	Name = "Auto Sell Items",
 	CurrentValue = false,
 	Callback = function(state)
 		if state then
 			sellToggleRunning = true
-			autoSellAndTalk()
+			autoSellLoop()
 		else
 			sellToggleRunning = false
 			if sellToggleTask then
@@ -569,9 +533,8 @@ for _, chant in ipairs(chants) do
 end
 
 
-
-local Tab = Window:CreateTab("Monster & dummy ")
-local DummySection = Tab:CreateSection("Monster & dummy Section")
+local Tab = Window:CreateTab("Monster & Dummy")
+local DummySection = Tab:CreateSection("Monster & Dummy Section")
 
 local stickyEnemies = {
     "Dummy",
@@ -594,11 +557,15 @@ local stickyEnemies = {
     "Mimicry",
     "The Red Mist",
     "Dog",
-    'Monkey'
-     
+    "Monkey",
+    "Space Curse",
+    "Paper Curse Half",
+    "Paper Curse Quarter"
 }
 
 local stickyEnabled = {}
+local attackDistance = 5 -- ค่าเริ่มต้น
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
@@ -611,7 +578,20 @@ player.CharacterAdded:Connect(function(char)
     hrp = character:WaitForChild("HumanoidRootPart")
 end)
 
--- ✅ สร้าง Toggle ให้แต่ละชื่อ
+-- ✅ Attack Distance อยู่บนสุด
+Tab:CreateSlider({
+    Name = "Attack Distance",
+    Range = {1, 15},
+    Increment = 1,
+    Suffix = " studs",
+    CurrentValue = attackDistance,
+    Flag = "AttackDistance",
+    Callback = function(value)
+        attackDistance = value
+    end,
+})
+
+-- ✅ Toggle สำหรับเลือกมอน/ดัมมี่
 for _, name in ipairs(stickyEnemies) do
     Tab:CreateToggle({
         Name = name,
@@ -623,7 +603,7 @@ for _, name in ipairs(stickyEnemies) do
     })
 end
 
--- ✅ วาร์ปไปหาตัวที่ "เปิด toggle" และ "ใกล้ที่สุด"
+-- ✅ ระบบหาตัวที่ใกล้ที่สุดที่เปิด Toggle
 RunService.RenderStepped:Connect(function()
     local closestTarget = nil
     local closestDistance = math.huge
@@ -634,7 +614,7 @@ RunService.RenderStepped:Connect(function()
         and obj:FindFirstChild("Humanoid")
         and obj:FindFirstChild("HumanoidRootPart")
         and obj.Humanoid.Health > 0
-        and stickyEnabled[obj.Name] then -- ✅ ตรวจว่าชื่อนี้ toggle อยู่
+        and stickyEnabled[obj.Name] then
             local dist = (obj.HumanoidRootPart.Position - hrp.Position).Magnitude
             if dist < closestDistance then
                 closestDistance = dist
@@ -644,9 +624,13 @@ RunService.RenderStepped:Connect(function()
     end
 
     if closestTarget then
-        hrp.CFrame = closestTarget.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
+        hrp.CFrame = CFrame.new(
+            closestTarget.HumanoidRootPart.Position - closestTarget.HumanoidRootPart.CFrame.LookVector * attackDistance,
+            closestTarget.HumanoidRootPart.Position
+        )
     end
 end)
+
 
 
 local Tab = Window:CreateTab("Auto Use Skills & Attacking M1")
