@@ -269,7 +269,7 @@ end
 
 
 -- ================== RAYFIELD UI ==================
-local Tab = Window:CreateTab("Luby Hub By zazq_io", "swords")
+local Tab = Window:CreateTab("Luby Hub ", "swords")
 
 Tab:CreateDropdown({
     Name = "Target Mode",
