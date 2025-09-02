@@ -1,4 +1,4 @@
--- ===== จำกัดแมพ =====
+
 local allowedPlaceId = 10449761463
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -12,10 +12,9 @@ if game.PlaceId ~= allowedPlaceId then
     return
 end
 
--- ===== SERVICE =====
+
 local RunService = game:GetService("RunService")
 
--- ===== CHARACTER SETUP =====
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HRP = Character:FindFirstChild("HumanoidRootPart")
 
@@ -24,7 +23,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     HRP = Character:WaitForChild("HumanoidRootPart")
 end)
 
--- ===== Rayfield UI =====
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
 	Name = "Luby Hub By zazq_io",
@@ -36,12 +35,12 @@ local Window = Rayfield:CreateWindow({
 	ToggleUIKeybind = "K",
 })
 
--- ===== CONFIG =====
+
 local attackMode = "LowestHP"
 local attackDistance = 5
 local attackDelay = 0.3
 
--- ===== HELPER =====
+
 local function isAlive(character)
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
     return humanoid and humanoid.Health > 0
@@ -84,13 +83,13 @@ local function getTarget()
     end
 end
 
--- ===== TOGGLE VARIABLES =====
+
 local farming = false
 local autoToolEnabled = false
 local autoM1Enabled = false
 local warpEnabled = false
 
--- ================== AUTO FARM ==================
+
 local currentTarget
 local function autoFarmLoop()
     while farming do
@@ -120,7 +119,7 @@ local function stopAutoFarm()
     currentTarget = nil
 end
 
--- ================== AUTO TOOL ==================
+
 local function autoToolLoop()
     while autoToolEnabled do
         local char = LocalPlayer.Character
@@ -155,7 +154,7 @@ local function autoToolLoop()
     end
 end
 
--- ================== AUTO M1 ==================
+
 local function doM1()
     local char = LocalPlayer.Character
     if not char or not isAlive(char) then return end
@@ -182,7 +181,7 @@ local function stopAutoM1()
     autoM1Enabled = false
 end
 
--- ================== WARP SYSTEM (with Stick) ==================
+
 local cfList = { 
     CFrame.new(121.953453, 439.527344, 407.232025, 0.923881531, 0, 0.382678568, 0, 1, 0, -0.382678568, 0, 0.923881531),
     CFrame.new(72.2151031, 439.488281, -81.3822479, 0.923881531, 0, 0.382678568, 0, 1, 0, -0.382678568, 0, 0.923881531),
@@ -220,7 +219,7 @@ local function doClick()
     if comm then pcall(function() comm:FireServer({{Goal="LeftClick"}}) end) end
 end
 
--- ฟังก์ชันติดกาวไปยัง target (item หรือ player)
+
 local function stickToTarget(hrp, targetPart, maxTime)
     local startTime = tick()
     while tick() - startTime < maxTime and warpEnabled do
@@ -234,7 +233,7 @@ local function stickToTarget(hrp, targetPart, maxTime)
     end
 end
 
--- Warp Loop หลัก
+
 local function startWarpLoop()
     spawn(function()
         while warpEnabled do
@@ -242,12 +241,12 @@ local function startWarpLoop()
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then task.wait(1) continue end
 
-            -- 1️⃣ วาร์ปไปยังจุดสุ่ม
+            
             local cf = cfList[math.random(1,#cfList)]
             hrp.CFrame = cf
             task.wait(delayTime)
 
-            -- 2️⃣ หา item ใกล้และติดกาวเก็บ
+            
             local items = workspace:GetChildren()
             for _, item in pairs(items) do
                 if item.Name == "ItemPart" and item:IsA("BasePart") then
@@ -255,7 +254,7 @@ local function startWarpLoop()
                 end
             end
 
-            -- 3️⃣ หา player ที่เลือดน้อยสุดและติดกาวโจมตี
+            
             local target = getLowestHPPlayer()
             if target and target.Character then
                 local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
@@ -268,7 +267,7 @@ local function startWarpLoop()
 end
 
 
--- ================== RAYFIELD UI ==================
+
 local Tab = Window:CreateTab("Luby Hub ", "swords")
 
 Tab:CreateDropdown({
