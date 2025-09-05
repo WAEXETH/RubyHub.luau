@@ -31,8 +31,6 @@ local plr = Players.LocalPlayer
 local character = plr.Character or plr.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
-
-local E_HOLD_TIME = 3
 local EXCLUDED_ITEM_INDEX = 7
 local ignoreNames = {"Box", "Chest", "Barrel"} 
 local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
@@ -70,20 +68,20 @@ local function isLevelItem(itemName)
 	return false
 end
 
--- Hold ProximityPrompt
-local function holdPrompt(prompt)
+-- Instant Interact (ใช้ FireProximityPrompt)
+local function interactPrompt(prompt)
 	if not prompt then return end
-	pcall(function() prompt:InputHoldBegin() end)
-	task.wait(prompt.HoldDuration or E_HOLD_TIME)
-	pcall(function() prompt:InputHoldEnd() end)
+	pcall(function()
+		fireproximityprompt(prompt, 1)
+	end)
 end
 
--- Collect a single prompt
+-- Collect a single prompt (ใช้ offset ป้องกันวาร์ปทับ)
 local function collectPrompt(prompt)
 	if not prompt or not prompt.Parent or not hrp then return end
-	hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 2, 0)
-	task.wait(0.05)
-	holdPrompt(prompt)
+	hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 3, 0)
+	task.wait(0.1)
+	interactPrompt(prompt)
 end
 
 -- Get valid Level-Up prompts
@@ -97,47 +95,48 @@ local function getValidLevelPrompts()
 	return results
 end
 
--- Try collecting a single item (Auto Collect)
+-- Try collect item (Auto Collect)
 local function tryCollectItem(item)
 	if not item:IsDescendantOf(Workspace) then return false end
-	if isLevelItem(item.Name) then return false end -- ข้าม Level items
-	if failedAttempts[item] and failedAttempts[item] >= 3 then return false end
+	if isLevelItem(item.Name) then return false end
+	if failedAttempts[item] and failedAttempts[item] >= 2 then return false end
 
 	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-	if not prompt or not prompt.Enabled then return false end
-
-	local attempts = 0
-	while attempts < 3 do
-		if not item:IsDescendantOf(Workspace) or not autoCollectEnabled then
-			return true
-		end
-
-		hrp.CFrame = item.CFrame + Vector3.new(0, 2, 0)
-		pcall(function() prompt:InputHoldBegin() end)
-		task.wait(prompt.HoldDuration + 0.05)
-		pcall(function() prompt:InputHoldEnd() end)
-
-		if not item:IsDescendantOf(Workspace) then
-			return true
-		end
-		attempts += 1
+	if not prompt or not prompt.Enabled then 
+		warn("[AutoCollect] ❌ ไม่มี Prompt หรือ Disabled สำหรับ:", item.Name)
+		return false 
 	end
 
+	-- warp + interact
+	hrp.CFrame = item.CFrame + Vector3.new(0, 3, 0)
+	task.wait(0.1)
+	interactPrompt(prompt)
+
+	-- check ถ้าเก็บสำเร็จ (item หายไป)
+	if not item:IsDescendantOf(Workspace) then
+		print("[AutoCollect] ✅ เก็บสำเร็จ:", item.Name)
+		return true
+	end
+
+	-- fail → บันทึกว่าเก็บไม่ได้
 	failedAttempts[item] = (failedAttempts[item] or 0) + 1
+	warn("[AutoCollect] ⚠️ เก็บไม่สำเร็จ:", item.Name, "ครั้งที่", failedAttempts[item])
 	return false
 end
 
--- Main Auto Loop
+-- Main Auto Loop (เบาลง)
 task.spawn(function()
 	while true do
-		task.wait(0.1)
+		task.wait(0.3) -- เดิม 0.1 → ลดภาระ CPU
 
 		-- Auto Farm Level
 		if autoFarmEnabled then
 			for _, prompt in ipairs(getValidLevelPrompts()) do
 				if not autoFarmEnabled then break end
-				collectPrompt(prompt)
-				task.wait(0.05)
+				task.spawn(function()
+					collectPrompt(prompt)
+				end)
+				task.wait(0.1)
 			end
 		end
 
@@ -145,8 +144,10 @@ task.spawn(function()
 		if autoCollectEnabled and Workspace:FindFirstChild("Item") then
 			for _, item in ipairs(Workspace.Item:GetChildren()) do
 				if not isIgnored(item.Name) then
-					tryCollectItem(item)
-					task.wait(0.05)
+					task.spawn(function()
+						tryCollectItem(item)
+					end)
+					task.wait(0.1)
 				end
 			end
 		end
@@ -169,7 +170,6 @@ autoFarmTab:CreateToggle({
 		autoCollectEnabled = state
 	end
 })
-
 
 
 local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
@@ -1173,7 +1173,7 @@ local noclipEnabled = false
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
--- ฟังก์ชันเปิด/ปิด NoClip
+
 local function setNoClip(state)
     local char = LocalPlayer.Character
     if not char then return end
@@ -1184,14 +1184,14 @@ local function setNoClip(state)
     end
 end
 
--- Loop อัปเดต NoClip เผื่อส่วนใหม่เกิด
+
 RunService.Heartbeat:Connect(function()
     if noclipEnabled then
         setNoClip(true)
     end
 end)
 
--- รีเซ็ตเมื่อเกิดใหม่
+
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
     HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
@@ -1200,7 +1200,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     end
 end)
 
--- UI: Toggle เปิด/ปิด NoClip
+
 AutoKillTab:CreateToggle({
     Name = "NoClip",
     CurrentValue = false,
