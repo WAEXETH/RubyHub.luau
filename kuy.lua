@@ -35,3 +35,11 @@ Tab:CreateButton({
         loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/refs/heads/main/riderworld.lua"))()
     end
 })
+
+
+Tab:CreateButton({
+    Name = "ProjectSmash",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/refs/heads/main/ProjectSmash.lua"))()
+    end
+})
