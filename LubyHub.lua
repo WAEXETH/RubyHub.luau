@@ -31,34 +31,25 @@ local plr = Players.LocalPlayer
 local character = plr.Character or plr.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
-local EXCLUDED_ITEM_INDEX = 7
-local ignoreNames = {"Box", "Chest", "Barrel"} 
+-- ใช้เฉพาะ Auto Farm Level
 local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
 
+-- ใช้เฉพาะ Auto Collect (ไม่เก็บพวก Farm Level และ Chest)
+local COLLECT_IGNORE = {"Box", "Barrel", "BoxDrop","Chest"}
 
 local autoFarmEnabled = false
 local autoCollectEnabled = false
-local EXCLUDED_ITEM = nil
 local failedAttempts = {}
+local retryItems = {}
 
-
+-- Update character
 local function updateCharacter()
 	character = plr.Character or plr.CharacterAdded:Wait()
 	hrp = character:WaitForChild("HumanoidRootPart", 5)
 end
 plr.CharacterAdded:Connect(updateCharacter)
 
--- Check if item should be ignored (Auto Collect)
-local function isIgnored(itemName)
-	for _, word in ipairs(ignoreNames) do
-		if string.lower(itemName) == string.lower(word) then
-			return true
-		end
-	end
-	return false
-end
-
--- Check if item is a Level-Up item
+-- ฟังก์ชันเช็คว่าเป็น Farm Level item
 local function isLevelItem(itemName)
 	for _, word in ipairs(LEVEL_ITEM_NAMES) do
 		if string.lower(itemName) == string.lower(word) then
@@ -68,7 +59,17 @@ local function isLevelItem(itemName)
 	return false
 end
 
--- Instant Interact (ใช้ FireProximityPrompt)
+-- ฟังก์ชันเช็คว่าเป็น item ที่ Auto Collect ต้อง ignore
+local function isCollectIgnored(itemName)
+	for _, word in ipairs(COLLECT_IGNORE) do
+		if string.lower(itemName) == string.lower(word) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Instant Interact
 local function interactPrompt(prompt)
 	if not prompt then return end
 	pcall(function()
@@ -76,15 +77,15 @@ local function interactPrompt(prompt)
 	end)
 end
 
--- Collect a single prompt (ใช้ offset ป้องกันวาร์ปทับ)
+-- เก็บ Farm Level Prompt
 local function collectPrompt(prompt)
 	if not prompt or not prompt.Parent or not hrp then return end
-	hrp.CFrame = prompt.Parent.CFrame + Vector3.new(0, 3, 0)
-	task.wait(0.1)
+	hrp.CFrame = prompt.Parent.CFrame * CFrame.new(0, 3, 0)
+	task.wait(0.2)
 	interactPrompt(prompt)
 end
 
--- Get valid Level-Up prompts
+-- หา Farm Level Prompts
 local function getValidLevelPrompts()
 	local results = {}
 	for _, v in ipairs(Workspace:GetDescendants()) do
@@ -95,39 +96,52 @@ local function getValidLevelPrompts()
 	return results
 end
 
--- Try collect item (Auto Collect)
+-- เก็บไอเทมทั่วไป (Auto Collect)
 local function tryCollectItem(item)
 	if not item:IsDescendantOf(Workspace) then return false end
-	if isLevelItem(item.Name) then return false end
-	if failedAttempts[item] and failedAttempts[item] >= 2 then return false end
+	if isCollectIgnored(item.Name) then return false end
 
-	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true) 
+		or item:WaitForChild("ProximityPrompt", 2)
 	if not prompt or not prompt.Enabled then 
-		warn("[AutoCollect] ❌ ไม่มี Prompt หรือ Disabled สำหรับ:", item.Name)
+		warn("[AutoCollect] ❌:", item.Name)
+		if not table.find(retryItems, item) then
+			table.insert(retryItems, item)
+		end
 		return false 
 	end
 
-	-- warp + interact
-	hrp.CFrame = item.CFrame + Vector3.new(0, 3, 0)
-	task.wait(0.1)
+	-- วาร์ปไปที่ item
+	hrp.CFrame = item.CFrame * CFrame.new(0, 3, -2)
+	task.wait(0.2)
 	interactPrompt(prompt)
 
-	-- check ถ้าเก็บสำเร็จ (item หายไป)
+	-- check ถ้าเก็บสำเร็จ
 	if not item:IsDescendantOf(Workspace) then
-		print("[AutoCollect] ✅ เก็บสำเร็จ:", item.Name)
+		print("[AutoCollect] ✅ ", item.Name)
+		-- ลบจาก retryItems ถ้าอยู่
+		for i = #retryItems, 1, -1 do
+			if retryItems[i] == item then table.remove(retryItems, i) end
+		end
 		return true
+	else
+		-- ถ้าแมพมีไอเทมแค่ชิ้นเดียว → พยายามเก็บต่อ
+		if #Workspace.Item:GetChildren() == 1 then
+			task.wait(0.3)
+			return tryCollectItem(item)
+		else
+			if not table.find(retryItems, item) then
+				table.insert(retryItems, item)
+			end
+			return false
+		end
 	end
-
-	-- fail → บันทึกว่าเก็บไม่ได้
-	failedAttempts[item] = (failedAttempts[item] or 0) + 1
-	warn("[AutoCollect] ⚠️ เก็บไม่สำเร็จ:", item.Name, "ครั้งที่", failedAttempts[item])
-	return false
 end
 
--- Main Auto Loop (เบาลง)
+-- Main Auto Loop
 task.spawn(function()
 	while true do
-		task.wait(0.3) -- เดิม 0.1 → ลดภาระ CPU
+		task.wait(0.3)
 
 		-- Auto Farm Level
 		if autoFarmEnabled then
@@ -142,19 +156,33 @@ task.spawn(function()
 
 		-- Auto Collect Items
 		if autoCollectEnabled and Workspace:FindFirstChild("Item") then
+			-- เก็บไอเทมปกติ
 			for _, item in ipairs(Workspace.Item:GetChildren()) do
-				if not isIgnored(item.Name) then
+				if not isCollectIgnored(item.Name) then
 					task.spawn(function()
 						tryCollectItem(item)
 					end)
 					task.wait(0.1)
 				end
 			end
+
+			-- ลองเก็บไอเทมที่เคยเก็บไม่ติด (retry)
+			for i = #retryItems, 1, -1 do
+				local item = retryItems[i]
+				if item and item:IsDescendantOf(Workspace) then
+					task.spawn(function()
+						tryCollectItem(item)
+					end)
+					task.wait(0.1)
+				else
+					table.remove(retryItems, i)
+				end
+			end
 		end
 	end
 end)
 
--- Toggles
+-- UI Toggles
 autoFarmTab:CreateToggle({
 	Name = "Auto Farm Level",
 	CurrentValue = false,
@@ -267,12 +295,12 @@ local function collectChest(chest)
 
     -- ตรวจสอบอีกครั้งว่ากล่องยังอยู่หรือไม่
     if not chest:IsDescendantOf(Workspace) then
-        print("[AutoChest] ✅ เก็บสำเร็จ:", chest.Name)
+        print("[AutoChest] ✅ :", chest.Name)
         return true
     end
 
     failedAttempts[chest] = (failedAttempts[chest] or 0) + 1
-    warn("[AutoChest] ⚠️ เก็บไม่สำเร็จ:", chest.Name, "ครั้งที่", failedAttempts[chest])
+    warn("[AutoChest] ⚠️ :", chest.Name, "ครั้งที่", failedAttempts[chest])
     return false
 end
 
@@ -304,6 +332,58 @@ autoFarmTab:CreateToggle({
 	CurrentValue = false,
 	Callback = function(state)
 		autoChestEnabled = state
+	end
+})
+
+
+local autoUpgradeMaster = false
+local autoBreakthrough = false
+
+-- RemoteEvents
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UpgradeRemote = ReplicatedStorage:WaitForChild("GlobalUsedRemotes"):WaitForChild("UpgradeMas")
+local BreakthroughRemote = ReplicatedStorage:WaitForChild("GlobalUsedRemotes"):WaitForChild("Breakthrough")
+
+-- Auto UpgradeMas Loop
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if autoUpgradeMaster then
+			pcall(function()
+				UpgradeRemote:FireServer()
+				print("🔥 UpgradeMas Fired")
+			end)
+		end
+	end
+end)
+
+-- Auto Breakthrough Loop
+task.spawn(function()
+	while true do
+		task.wait(0.5)
+		if autoBreakthrough then
+			pcall(function()
+				BreakthroughRemote:FireServer()
+				print("✨ Breakthrough Fired")
+			end)
+		end
+	end
+end)
+
+-- UI Toggles
+autoFarmTab:CreateToggle({
+	Name = "Auto Upgrade Master",
+	CurrentValue = false,
+	Callback = function(state)
+		autoUpgradeMaster = state
+	end
+})
+
+autoFarmTab:CreateToggle({
+	Name = "Auto Breakthrough",
+	CurrentValue = false,
+	Callback = function(state)
+		autoBreakthrough = state
 	end
 })
 
