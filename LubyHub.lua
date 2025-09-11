@@ -35,13 +35,13 @@ local EXCLUDED_ITEM_INDEX = 7
 local ignoreNames = {"Box", "Chest", "Barrel"} 
 local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
 
--- Control variables
+
 local autoFarmEnabled = false
 local autoCollectEnabled = false
 local EXCLUDED_ITEM = nil
 local failedAttempts = {}
 
--- Update character references
+
 local function updateCharacter()
 	character = plr.Character or plr.CharacterAdded:Wait()
 	hrp = character:WaitForChild("HumanoidRootPart", 5)
@@ -172,6 +172,142 @@ autoFarmTab:CreateToggle({
 })
 
 
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local plr = Players.LocalPlayer
+local character = plr.Character or plr.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Control variables
+local autoChestEnabled = false
+local failedAttempts = {}
+
+-- Update character references
+local function updateCharacter()
+	character = plr.Character or plr.CharacterAdded:Wait()
+	hrp = character:WaitForChild("HumanoidRootPart", 5)
+end
+plr.CharacterAdded:Connect(updateCharacter)
+
+-- Instant Interact
+local function interactPrompt(prompt)
+	if not prompt then return end
+	pcall(function()
+		fireproximityprompt(prompt, 1)
+	end)
+end
+
+local function collectChest(chest)
+    if not chest or not chest:IsDescendantOf(Workspace) then return false end
+    if not hrp then return false end
+
+    local targetPart = chest:IsA("BasePart") and chest or (chest.PrimaryPart or chest:FindFirstChildWhichIsA("BasePart"))
+    if not targetPart then return false end
+
+    -- Warp แบบติดกาว
+    for i = 1, 5 do
+        if not chest:IsDescendantOf(Workspace) then break end
+        local currentPos = hrp.Position
+        local targetPos = targetPart.Position + Vector3.new(0,3,0)
+        local stepPos = currentPos:Lerp(targetPos, 0.5)
+        hrp.CFrame = CFrame.new(stepPos)
+        task.wait(0.05)
+    end
+
+    local success = false
+
+    -- ถ้า Chest ต้องใช้ Key
+    local hasKey = chest:FindFirstChild("RequiresKey") -- สมมติชื่อ property
+    if hasKey and hasKey.Value == true then
+        local playerKeys = plr:FindFirstChild("Keys") -- ตรวจสอบว่าผู้เล่นมีกุญแจ
+        if playerKeys and playerKeys.Value > 0 then
+            -- ใช้กุญแจเปิด
+            local useKeyRemote = ReplicatedStorage:FindFirstChild("UseKey")
+            if useKeyRemote then
+                pcall(function()
+                    useKeyRemote:FireServer(chest)
+                end)
+                task.wait(0.3)
+                success = true
+            end
+        else
+            -- ไม่มี key → ข้าม Chest นี้
+            return false
+        end
+    else
+        -- Chest ปกติ → ใช้ RemoteEvent
+        local interactRemote = ReplicatedStorage:FindFirstChild("GlobalUsedRemotes") 
+            and ReplicatedStorage.GlobalUsedRemotes:FindFirstChild("Interact")
+        if interactRemote then
+            success = pcall(function()
+                interactRemote:FireServer(chest)
+            end)
+            task.wait(0.2)
+        end
+    end
+
+    -- fallback ใช้ Prompt แบบ recursive
+    if not success then
+        local function findPrompt(obj)
+            for _, child in ipairs(obj:GetChildren()) do
+                if child:IsA("ProximityPrompt") then return child end
+                local found = findPrompt(child)
+                if found then return found end
+            end
+            return nil
+        end
+        local prompt = findPrompt(chest)
+        if prompt then
+            fireproximityprompt(prompt, 1)
+            task.wait(0.2)
+        end
+    end
+
+    -- ตรวจสอบอีกครั้งว่ากล่องยังอยู่หรือไม่
+    if not chest:IsDescendantOf(Workspace) then
+        print("[AutoChest] ✅ เก็บสำเร็จ:", chest.Name)
+        return true
+    end
+
+    failedAttempts[chest] = (failedAttempts[chest] or 0) + 1
+    warn("[AutoChest] ⚠️ เก็บไม่สำเร็จ:", chest.Name, "ครั้งที่", failedAttempts[chest])
+    return false
+end
+
+-- Main Loop Auto Chest
+task.spawn(function()
+	while true do
+		task.wait(0.3)
+		if autoChestEnabled and Workspace:FindFirstChild("Item") and Workspace.Item:FindFirstChild("Chest") then
+			local chestFolder = Workspace.Item.Chest
+			for _, chest in ipairs(chestFolder:GetChildren()) do
+				if chest.Name == "Chest" then
+					-- รันแบบติดกาวให้เก็บ Chest จนสำเร็จ
+					task.spawn(function()
+						while chest:IsDescendantOf(Workspace) and autoChestEnabled do
+							collectChest(chest)
+							task.wait(0.2)
+						end
+					end)
+					task.wait(0.1)
+				end
+			end
+		end
+	end
+end)
+
+-- Toggle
+autoFarmTab:CreateToggle({
+	Name = "Auto Collect Chest",
+	CurrentValue = false,
+	Callback = function(state)
+		autoChestEnabled = state
+	end
+})
+
+
 local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
 local autoSellSection = autoSellTab:CreateSection("Sell")
 
@@ -181,39 +317,47 @@ local sellableItems = {
 	"Mochi Mochi Devil Fruit", "Bari Bari Devil Fruit"
 }
 
+local keepItems = {} -- ตารางเก็บไอเทมที่ผู้เล่นเลือก "จะเก็บไว้"
 local sellToggleRunning = false
 local sellToggleTask = nil
 
--- Function to sell all items in backpack
+-- Function: เช็คว่าไอเทมขายได้หรือไม่
+local function shouldSell(itemName)
+	-- ถ้าอยู่ใน keepItems (เลือกเก็บไว้) → ไม่ขาย
+	if keepItems[itemName] then
+		return false
+	end
+
+	-- ถ้าอยู่ใน sellableItems → ขายได้
+	for _, v in ipairs(sellableItems) do
+		if v == itemName then
+			return true
+		end
+	end
+	return false
+end
+
+-- Function: ขายของในกระเป๋า
 local function autoSellBackpackFast()
 	local backpack = plr:FindFirstChild("Backpack")
 	if not backpack then return end
 	local sellRemote = game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("SellItem")
 
-	for _, itemName in ipairs(sellableItems) do
-		local count = 0
-		for _, item in ipairs(backpack:GetChildren()) do
-			if item.Name == itemName then
-				count = count + 1
-			end
-		end
-		if count > 0 then
-			for i = 1, count do
-				pcall(function()
-					sellRemote:FireServer(itemName)
-				end)
-				task.wait(0.05)
-			end
+	for _, item in ipairs(backpack:GetChildren()) do
+		if shouldSell(item.Name) then
+			pcall(function()
+				sellRemote:FireServer(item.Name)
+			end)
+			task.wait(0.05)
 		end
 	end
 end
 
--- Function to interact with NPC via ProximityPrompt
+-- กดคุยกับ NPC
 local function interactNPC(npc)
 	if not npc or not npc:IsDescendantOf(workspace) then return end
 	local prompt = npc:FindFirstChildOfClass("ProximityPrompt")
 	if prompt then
-		-- กด prompt โดยไม่วาร์ป
 		pcall(function() prompt:InputHoldBegin() end)
 		task.wait(prompt.HoldDuration or 1.5)
 		pcall(function() prompt:InputHoldEnd() end)
@@ -222,11 +366,10 @@ local function interactNPC(npc)
 	return false
 end
 
--- Main Auto Sell Loop
+-- วนลูป Auto Sell
 local function autoSellLoop()
 	sellToggleTask = task.spawn(function()
 		while sellToggleRunning do
-			-- หา NPC อัปเดตใหม่ทุกครั้ง
 			local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild("Chxmei")
 			if npc then
 				interactNPC(npc)
@@ -234,12 +377,12 @@ local function autoSellLoop()
 			else
 				warn("❌ NPC 'Chxmei' ไม่พบ")
 			end
-			task.wait(3) -- รอ 3 วินาที ก่อนเช็คใหม่
+			task.wait(3)
 		end
 	end)
 end
 
--- Toggle
+-- Toggle เปิด/ปิด Auto Sell
 autoSellTab:CreateToggle({
 	Name = "Auto Sell Items",
 	CurrentValue = false,
@@ -256,6 +399,24 @@ autoSellTab:CreateToggle({
 		end
 	end
 })
+
+-- ✅ UI ให้ผู้เล่นเลือก "จะเก็บไอเทมไหน"
+for _, itemName in ipairs(sellableItems) do
+	autoSellTab:CreateToggle({
+		Name = "Keep " .. itemName,
+		CurrentValue = false,
+		Callback = function(state)
+			if state then
+				keepItems[itemName] = true
+				print("✅ เก็บไว้:", itemName)
+			else
+				keepItems[itemName] = nil
+				print("❌ ขาย:", itemName)
+			end
+		end
+	})
+end
+
 
 
 local teleportTab = Window:CreateTab("Teleport", "map")
@@ -416,18 +577,34 @@ local npcSection = npcTeleportTab:CreateSection(" NPC Special (Random birth) ")
 
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") or player.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
 
+-- ฟังก์ชันเพื่อเอา HumanoidRootPart ล่าสุด
+local function getHRP()
+    local char = player.Character or player.CharacterAdded:Wait()
+    return char:WaitForChild("HumanoidRootPart")
+end
+
+-- ฟังก์ชันวาปไปยังหัว NPC
 local function teleportToNPCHead(npcName)
-    local npc = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs") and workspace.Map.NPCs:FindFirstChild(npcName)
-    if npc and npc:FindFirstChild("Head") then
-        hrp.CFrame = npc.Head.CFrame + Vector3.new(0, 3, 0)
-        print("✅ Teleported to " .. npcName)
+    local npcFolder = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("NPCs")
+    if not npcFolder then
+        warn("❌ NPC folder not found")
+        return
+    end
+
+    -- รอ NPC spawn (สูงสุด 5 วิ)
+    local npc = npcFolder:FindFirstChild(npcName) or npcFolder.ChildAdded:Wait()
+    local head = npc:FindFirstChild("Head") or npc:WaitForChild("Head", 5)
+    if npc and head then
+        local hrp = getHRP()
+        hrp.CFrame = head.CFrame + Vector3.new(0, 3, 0)
+        print("✅  " .. npcName)
     else
-        warn("❌ " .. npcName .. " not found.")
+        warn("❌ " .. npcName .. " not found or has no Head.")
     end
 end
 
+-- ปุ่มวาป NPC
 npcTeleportTab:CreateButton({
     Name = "Baiken",
     Callback = function()
