@@ -104,7 +104,6 @@ local function tryCollectItem(item)
 	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true) 
 		or item:WaitForChild("ProximityPrompt", 2)
 	if not prompt or not prompt.Enabled then 
-		warn("[AutoCollect] ❌:", item.Name)
 		if not table.find(retryItems, item) then
 			table.insert(retryItems, item)
 		end
@@ -118,8 +117,6 @@ local function tryCollectItem(item)
 
 	-- check ถ้าเก็บสำเร็จ
 	if not item:IsDescendantOf(Workspace) then
-		print("[AutoCollect] ✅ ", item.Name)
-		-- ลบจาก retryItems ถ้าอยู่
 		for i = #retryItems, 1, -1 do
 			if retryItems[i] == item then table.remove(retryItems, i) end
 		end
@@ -200,7 +197,7 @@ autoFarmTab:CreateToggle({
 })
 
 
-local Players = game:GetService("Players")
+local Players = game:GetService("Players") 
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -223,8 +220,20 @@ plr.CharacterAdded:Connect(updateCharacter)
 local function interactPrompt(prompt)
 	if not prompt then return end
 	pcall(function()
-		fireproximityprompt(prompt, 1)
+		fireproximityprompt(prompt, math.huge) -- ใช้ instant interact
 	end)
+end
+
+-- หาฟังก์ชันค้นหา Prompt ไว้ใช้หลายที่
+local function findPrompt(obj)
+	for _, child in ipairs(obj:GetChildren()) do
+		if child:IsA("ProximityPrompt") then 
+			return child 
+		end
+		local found = findPrompt(child)
+		if found then return found end
+	end
+	return nil
 end
 
 local function collectChest(chest)
@@ -246,12 +255,21 @@ local function collectChest(chest)
 
     local success = false
 
+    -- 🔹 ก่อนอื่นลองหาปุ่ม Prompt มากด (Instant Interact)
+    local prompt = findPrompt(chest)
+    if prompt then
+        interactPrompt(prompt)
+        task.wait(0.15)
+        if not chest:IsDescendantOf(Workspace) then
+            return true
+        end
+    end
+
     -- ถ้า Chest ต้องใช้ Key
-    local hasKey = chest:FindFirstChild("RequiresKey") -- สมมติชื่อ property
+    local hasKey = chest:FindFirstChild("RequiresKey")
     if hasKey and hasKey.Value == true then
-        local playerKeys = plr:FindFirstChild("Keys") -- ตรวจสอบว่าผู้เล่นมีกุญแจ
+        local playerKeys = plr:FindFirstChild("Keys")
         if playerKeys and playerKeys.Value > 0 then
-            -- ใช้กุญแจเปิด
             local useKeyRemote = ReplicatedStorage:FindFirstChild("UseKey")
             if useKeyRemote then
                 pcall(function()
@@ -261,7 +279,6 @@ local function collectChest(chest)
                 success = true
             end
         else
-            -- ไม่มี key → ข้าม Chest นี้
             return false
         end
     else
@@ -276,31 +293,20 @@ local function collectChest(chest)
         end
     end
 
-    -- fallback ใช้ Prompt แบบ recursive
+    -- fallback สุดท้ายอีกครั้ง ลองหา Prompt แล้วกดอีกรอบ
     if not success then
-        local function findPrompt(obj)
-            for _, child in ipairs(obj:GetChildren()) do
-                if child:IsA("ProximityPrompt") then return child end
-                local found = findPrompt(child)
-                if found then return found end
-            end
-            return nil
-        end
-        local prompt = findPrompt(chest)
-        if prompt then
-            fireproximityprompt(prompt, 1)
+        local prompt2 = findPrompt(chest)
+        if prompt2 then
+            interactPrompt(prompt2)
             task.wait(0.2)
         end
     end
 
-    -- ตรวจสอบอีกครั้งว่ากล่องยังอยู่หรือไม่
     if not chest:IsDescendantOf(Workspace) then
-        print("[AutoChest] ✅ :", chest.Name)
         return true
     end
 
     failedAttempts[chest] = (failedAttempts[chest] or 0) + 1
-    warn("[AutoChest] ⚠️ :", chest.Name, "ครั้งที่", failedAttempts[chest])
     return false
 end
 
@@ -312,7 +318,6 @@ task.spawn(function()
 			local chestFolder = Workspace.Item.Chest
 			for _, chest in ipairs(chestFolder:GetChildren()) do
 				if chest.Name == "Chest" then
-					-- รันแบบติดกาวให้เก็บ Chest จนสำเร็จ
 					task.spawn(function()
 						while chest:IsDescendantOf(Workspace) and autoChestEnabled do
 							collectChest(chest)
@@ -351,7 +356,6 @@ task.spawn(function()
 		if autoUpgradeMaster then
 			pcall(function()
 				UpgradeRemote:FireServer()
-				print("🔥 UpgradeMas Fired")
 			end)
 		end
 	end
@@ -364,7 +368,6 @@ task.spawn(function()
 		if autoBreakthrough then
 			pcall(function()
 				BreakthroughRemote:FireServer()
-				print("✨ Breakthrough Fired")
 			end)
 		end
 	end
@@ -895,13 +898,16 @@ local DummySection = Tab:CreateSection("Auto Use Skills & Attacking M1")
 
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- สถานะเปิด/ปิด Auto
 local autoSkillEnabled = false
 local autoAttackEnabled = false
 
--- สร้าง Toggle เปิด/ปิด Auto Skill
+-- ==================== UI Toggles ====================
+-- Toggle Auto Skill
 local skillToggle = Tab:CreateToggle({
-    Name = "Auto Skill ",
+    Name = "Auto Skill",
     CurrentValue = false,
     Flag = "AutoSkillToggle",
     Callback = function(Value)
@@ -909,7 +915,7 @@ local skillToggle = Tab:CreateToggle({
     end,
 })
 
--- สร้าง Toggle เปิด/ปิด Auto Attack (คลิกเมาส์ซ้าย)
+-- Toggle Auto Attack
 local attackToggle = Tab:CreateToggle({
     Name = "Auto Attack M1",
     CurrentValue = false,
@@ -919,28 +925,15 @@ local attackToggle = Tab:CreateToggle({
     end,
 })
 
--- รายการ KeyCode สกิลทั้งหมด
+-- ==================== Auto Skill ====================
 local skillKeys = {
-    Enum.KeyCode.E,
-    Enum.KeyCode.R,
-    Enum.KeyCode.T,
-    Enum.KeyCode.Y,
-    Enum.KeyCode.G,
-    Enum.KeyCode.H,
-    Enum.KeyCode.Q,
-    Enum.KeyCode.Z,
-    Enum.KeyCode.X,
-    Enum.KeyCode.V,
+    Enum.KeyCode.E, Enum.KeyCode.R, Enum.KeyCode.T,
+    Enum.KeyCode.Y, Enum.KeyCode.G, Enum.KeyCode.H,
+    Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.V, 
     Enum.KeyCode.B,
 }
 
-local lastPause = tick() -- เวลาเริ่มต้น
-local pauseDuration = 2 -- เวลาหยุด (วินาที)
-local activeDuration = 5 -- เวลาทำงาน (วินาที)
-local isPaused = false
-
--- ใช้สกิล
-local function pressSkillKeys()
+local function AutoSkill()
     for _, keyCode in ipairs(skillKeys) do
         VirtualInputManager:SendKeyEvent(true, keyCode, false, nil)
         task.wait(0.05)
@@ -949,22 +942,29 @@ local function pressSkillKeys()
     end
 end
 
-
-local function pressAttack()
-    local screenSize = workspace.CurrentCamera.ViewportSize
-    local centerX = screenSize.X / 2
-    local centerY = screenSize.Y / 2
-
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 0)
-    task.wait(0.05)
-    VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 0)
+-- ==================== Auto Attack (กดได้ทุกตัวละคร) ====================
+local function AutoAttackAll()
+    for _, remoteFolder in ipairs(ReplicatedStorage:GetChildren()) do
+        -- ตรวจว่ามันเป็น Folder หรือ Model ที่มี Remote "Punch"
+        if remoteFolder:IsA("Folder") or remoteFolder:IsA("Model") then
+            local punch = remoteFolder:FindFirstChild("Punch")
+            if punch and punch:IsA("RemoteEvent") then
+                punch:FireServer()
+            end
+        end
+    end
 end
 
+-- ==================== Loop ====================
+local lastPause = tick()
+local pauseDuration = 2
+local activeDuration = 5
+local isPaused = false
 
 RunService.RenderStepped:Connect(function()
     local now = tick()
 
-    
+    -- ควบคุมช่วงหยุด / ช่วงทำงาน
     if not isPaused and now - lastPause >= activeDuration then
         isPaused = true
         lastPause = now
@@ -973,10 +973,10 @@ RunService.RenderStepped:Connect(function()
         lastPause = now
     end
 
-    
+    -- เรียกฟังก์ชันตาม Toggle
     if not isPaused then
-        if autoSkillEnabled then pressSkillKeys() end
-        if autoAttackEnabled then pressAttack() end
+        if autoSkillEnabled then AutoSkill() end
+        if autoAttackEnabled then AutoAttackAll() end
     end
 end)
 
