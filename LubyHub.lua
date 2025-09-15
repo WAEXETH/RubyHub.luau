@@ -709,13 +709,13 @@ local roninSection = roninQuestTab:CreateSection("Ronin Quest V2")
 
 local roninQuestTeleportList = {
     ["1"] = CFrame.new(-534.262878, -261.767517, -4447.94678, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["2"] = CFrame.new(7558.78906, -416.672913, -3887.48145, 0.923132539, 0.0497069918, -0.38125518, 0.0210493021, 0.983586729, 0.179203987, 0.383905202, -0.173454195, 0.906934619),
+    ["2"] = CFrame.new(-11868.4258, 216.873856, 9445.74121, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["3"] = CFrame.new(-8931.51953, 420.982635, 1407.76099, -0.0231808424, -0.0539431982, -0.998275042, 0.0529567339, 0.997075081, -0.0551080592, 0.998327851, -0.0541428216, -0.0202564001),
     ["4"] = CFrame.new(-3701.47876, 696.754578, 5377.51123, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["5"] = CFrame.new(-2136.93872, -286.097168, -4591.50928, 0.698880374, -0.268390417, -0.662972748, -0.12495631, 0.86685282, -0.482651114, 0.704238713, 0.420158029, 0.572289348),
+    ["5"] = CFrame.new(-11061.0723, 582.476074, 8426.14355, 1, 0, 0, 0, 1, 0, 0, 0, 1),
     ["6"] = CFrame.new(-3866.35962, -180.888901, -999.858276, 0.815359712, 0.0296349041, -0.578195691, -0.0711272061, 0.996251166, -0.0492401645, 0.574568868, 0.081273891, 0.814410925),
     ["7"] = CFrame.new(-324.765259, 31.1866627, -2903.82251, 1, 0, 0, 0, 1, 0, 0, 0, 1),
-    ["8"] = CFrame.new(-6965.54248, -29.1699066, 1101.05481, 1, 0, 0, 0, 1, 0, 0, 0, 1),
+    ["8"] = CFrame.new(359.617676, 794.104614, -7894.00586, 1, 0, 0, 0, 1, 0, 0, 0, 1),
 }
 
 local plr = game.Players.LocalPlayer
@@ -725,7 +725,16 @@ local function getHRP()
     return character:WaitForChild("HumanoidRootPart")
 end
 
-for number, cframe in pairs(roninQuestTeleportList) do
+-- สร้างลิสต์ของ key แล้วเรียงตามตัวเลข
+local keys = {}
+for k in pairs(roninQuestTeleportList) do
+    table.insert(keys, tonumber(k))
+end
+table.sort(keys)
+
+-- วนลูปตามลำดับเรียง
+for _, number in ipairs(keys) do
+    local cframe = roninQuestTeleportList[tostring(number)]
     roninQuestTab:CreateButton({
         Name = " TP " .. number,
         Callback = function()
@@ -819,6 +828,8 @@ local stickyEnemies = {
     "Dog",
     "Monkey",
     "Space Curse",
+    "Paper Final Boss",
+    "Paper Curse",
     "Paper Curse Half",
     "Paper Curse Quarter"
 }
@@ -933,19 +944,29 @@ local skillKeys = {
     Enum.KeyCode.B,
 }
 
+local skillCooldown = 0.5 -- กำหนด cooldown ของสกิล
+local lastSkill = 0
+
 local function AutoSkill()
+    if tick() - lastSkill < skillCooldown then return end
+    lastSkill = tick()
+    
     for _, keyCode in ipairs(skillKeys) do
         VirtualInputManager:SendKeyEvent(true, keyCode, false, nil)
         task.wait(0.05)
         VirtualInputManager:SendKeyEvent(false, keyCode, false, nil)
-        task.wait(0.1)
     end
 end
 
--- ==================== Auto Attack (กดได้ทุกตัวละคร) ====================
+-- ==================== Auto Attack ====================
+local attackCooldown = 0.5 -- กำหนด cooldown ของ M1
+local lastAttack = 0
+
 local function AutoAttackAll()
+    if tick() - lastAttack < attackCooldown then return end
+    lastAttack = tick()
+
     for _, remoteFolder in ipairs(ReplicatedStorage:GetChildren()) do
-        -- ตรวจว่ามันเป็น Folder หรือ Model ที่มี Remote "Punch"
         if remoteFolder:IsA("Folder") or remoteFolder:IsA("Model") then
             local punch = remoteFolder:FindFirstChild("Punch")
             if punch and punch:IsA("RemoteEvent") then
@@ -961,7 +982,7 @@ local pauseDuration = 2
 local activeDuration = 5
 local isPaused = false
 
-RunService.RenderStepped:Connect(function()
+RunService.Heartbeat:Connect(function()
     local now = tick()
 
     -- ควบคุมช่วงหยุด / ช่วงทำงาน
@@ -979,6 +1000,7 @@ RunService.RenderStepped:Connect(function()
         if autoAttackEnabled then AutoAttackAll() end
     end
 end)
+
 
 
 local Players = game:GetService("Players")
@@ -1229,7 +1251,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- ค่าเริ่มต้น Roblox
-local defaultWalkSpeed = 16
+local defaultWalkSpeed = 25
 local defaultJumpPower = 50
 
 -- ค่าที่ปรับได้
