@@ -34,12 +34,11 @@ local hrp = character:WaitForChild("HumanoidRootPart")
 -- ใช้เฉพาะ Auto Farm Level
 local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
 
--- ใช้เฉพาะ Auto Collect (ไม่เก็บพวก Farm Level และ Chest)
-local COLLECT_IGNORE = {"Box", "Barrel", "BoxDrop","Chest"}
+-- ใช้เฉพาะ Auto Collect (ไม่เก็บพวก Farm Level, Chest และ A Nest)
+local COLLECT_IGNORE = {"Box", "Barrel", "BoxDrop", "Chest", "A Nest"}
 
 local autoFarmEnabled = false
 local autoCollectEnabled = false
-local failedAttempts = {}
 local retryItems = {}
 
 -- Update character
@@ -80,9 +79,13 @@ end
 -- เก็บ Farm Level Prompt
 local function collectPrompt(prompt)
 	if not prompt or not prompt.Parent or not hrp then return end
-	hrp.CFrame = prompt.Parent.CFrame * CFrame.new(0, 3, 0)
-	task.wait(0.2)
-	interactPrompt(prompt)
+	local targetPart = prompt.Parent:IsA("BasePart") and prompt.Parent or prompt.Parent:FindFirstChildWhichIsA("BasePart")
+	if targetPart then
+		hrp.CFrame = targetPart.CFrame * CFrame.new(0, 3, 0)
+		task.wait(0.2)
+		prompt.HoldDuration = 0
+		interactPrompt(prompt)
+	end
 end
 
 -- หา Farm Level Prompts
@@ -101,37 +104,38 @@ local function tryCollectItem(item)
 	if not item:IsDescendantOf(Workspace) then return false end
 	if isCollectIgnored(item.Name) then return false end
 
-	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true) 
-		or item:WaitForChild("ProximityPrompt", 2)
-	if not prompt or not prompt.Enabled then 
+	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if not prompt or not prompt.Enabled then
 		if not table.find(retryItems, item) then
 			table.insert(retryItems, item)
 		end
-		return false 
+		return false
 	end
 
-	-- วาร์ปไปที่ item
-	hrp.CFrame = item.CFrame * CFrame.new(0, 3, -2)
-	task.wait(0.2)
+	-- บังคับกดทันที
+	prompt.HoldDuration = 0
+
+	-- วาร์ปไปที่ Prompt โดยตรง
+	local targetPart = prompt.Parent:IsA("BasePart") and prompt.Parent or item
+	if hrp then
+		hrp.CFrame = targetPart.CFrame * CFrame.new(0, 2, 0)
+	end
+
+	task.wait(0.15)
 	interactPrompt(prompt)
 
-	-- check ถ้าเก็บสำเร็จ
+	-- ตรวจสอบว่าเก็บสำเร็จ
+	task.wait(0.1)
 	if not item:IsDescendantOf(Workspace) then
 		for i = #retryItems, 1, -1 do
 			if retryItems[i] == item then table.remove(retryItems, i) end
 		end
 		return true
 	else
-		-- ถ้าแมพมีไอเทมแค่ชิ้นเดียว → พยายามเก็บต่อ
-		if #Workspace.Item:GetChildren() == 1 then
-			task.wait(0.3)
-			return tryCollectItem(item)
-		else
-			if not table.find(retryItems, item) then
-				table.insert(retryItems, item)
-			end
-			return false
+		if not table.find(retryItems, item) then
+			table.insert(retryItems, item)
 		end
+		return false
 	end
 end
 
@@ -194,6 +198,61 @@ autoFarmTab:CreateToggle({
 	Callback = function(state)
 		autoCollectEnabled = state
 	end
+})
+
+-- =====================
+-- Auto Dungeon Function
+-- =====================
+
+local autoDungeonEnabled = false
+
+-- ตำแหน่ง CFrame ของประตูลงดัน
+local dungeonCFrame = CFrame.new(
+    -9287.55078, 802.958313, 9028.80469,
+    1, 0, 0,
+    0, 1, 0,
+    0, 0, 1
+)
+
+-- ฟังก์ชันลงดัน
+local function enterDungeon()
+    if not hrp then return end
+
+    -- วาร์ปไปที่ประตู
+    hrp.CFrame = dungeonCFrame + Vector3.new(0, 3, 0)
+
+    task.wait(0.2)
+
+    -- หา ProximityPrompt ที่ตำแหน่งประตู
+    local portal = Workspace:FindFirstChild("DungeonPortal")
+    local prompt
+    if portal then
+        prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
+
+    if prompt then
+        prompt.HoldDuration = 0
+        interactPrompt(prompt) -- กด E อัตโนมัติ
+    end
+end
+
+-- Main Auto Dungeon Loop
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if autoDungeonEnabled then
+            enterDungeon()
+        end
+    end
+end)
+
+-- UI Toggle
+autoFarmTab:CreateToggle({
+    Name = "Auto Dungeon กำลังทำ",
+    CurrentValue = false,
+    Callback = function(state)
+        autoDungeonEnabled = state
+    end
 })
 
 
@@ -483,7 +542,7 @@ autoSellTab:CreateToggle({
 	end
 })
 
--- ✅ UI ให้ผู้เล่นเลือก "จะเก็บไอเทมไหน"
+
 for _, itemName in ipairs(sellableItems) do
 	autoSellTab:CreateToggle({
 		Name = "Keep " .. itemName,
@@ -491,10 +550,10 @@ for _, itemName in ipairs(sellableItems) do
 		Callback = function(state)
 			if state then
 				keepItems[itemName] = true
-				print("✅ เก็บไว้:", itemName)
+				
 			else
 				keepItems[itemName] = nil
-				print("❌ ขาย:", itemName)
+				
 			end
 		end
 	})
@@ -911,7 +970,7 @@ local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- สถานะเปิด/ปิด Auto
+-- Toggle เปิด/ปิด
 local autoSkillEnabled = false
 local autoAttackEnabled = false
 
@@ -926,9 +985,9 @@ local skillToggle = Tab:CreateToggle({
     end,
 })
 
--- Toggle Auto Attack
+-- Toggle Auto Attack (M1 + Reliable)
 local attackToggle = Tab:CreateToggle({
-    Name = "Auto Attack M1",
+    Name = "Auto Attack M1 ",
     CurrentValue = false,
     Flag = "AutoAttackToggle",
     Callback = function(Value)
@@ -944,7 +1003,7 @@ local skillKeys = {
     Enum.KeyCode.B,
 }
 
-local skillCooldown = 0.5 -- กำหนด cooldown ของสกิล
+local skillCooldown = 0.5
 local lastSkill = 0
 
 local function AutoSkill()
@@ -959,24 +1018,38 @@ local function AutoSkill()
 end
 
 -- ==================== Auto Attack ====================
-local attackCooldown = 0.5 -- กำหนด cooldown ของ M1
+local attackCooldown = 0.1 -- ปรับให้โจมตีเร็วขึ้นตามต้องการ
 local lastAttack = 0
 
 local function AutoAttackAll()
-    if tick() - lastAttack < attackCooldown then return end
-    lastAttack = tick()
+    -- ยิงต่อเนื่องจนกว่าจะปิด toggle
+    while autoAttackEnabled do
+        if tick() - lastAttack >= attackCooldown then
+            lastAttack = tick()
 
-    for _, remoteFolder in ipairs(ReplicatedStorage:GetChildren()) do
-        if remoteFolder:IsA("Folder") or remoteFolder:IsA("Model") then
-            local punch = remoteFolder:FindFirstChild("Punch")
-            if punch and punch:IsA("RemoteEvent") then
-                punch:FireServer()
+            -- M1 Punch RemoteEvent
+            for _, remoteFolder in ipairs(ReplicatedStorage:GetChildren()) do
+                if remoteFolder:IsA("Folder") or remoteFolder:IsA("Model") then
+                    local punch = remoteFolder:FindFirstChild("Punch")
+                    if punch and punch:IsA("RemoteEvent") then
+                        punch:FireServer()
+                    end
+                end
             end
+
+            -- Reliable RemoteEvent พร้อม args
+            local args = {
+                buffer.fromstring("\015"),
+                buffer.fromstring("\254\001\000\006\003LMB")
+            }
+            reliableEvent:FireServer(unpack(args))
         end
+        task.wait() -- ปล่อยให้ระบบไม่แครช
     end
 end
 
--- ==================== Loop ====================
+
+-- ==================== Main Loop ====================
 local lastPause = tick()
 local pauseDuration = 2
 local activeDuration = 5
@@ -994,13 +1067,12 @@ RunService.Heartbeat:Connect(function()
         lastPause = now
     end
 
-    -- เรียกฟังก์ชันตาม Toggle
+    -- เรียกฟังก์ชัน Auto Skill / Auto Attack แยกกัน
     if not isPaused then
         if autoSkillEnabled then AutoSkill() end
         if autoAttackEnabled then AutoAttackAll() end
     end
 end)
-
 
 
 local Players = game:GetService("Players")
