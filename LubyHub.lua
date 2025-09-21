@@ -1,9 +1,35 @@
-
 local allowedPlaceId = 8534845015
+local inDungeon = false
 
-if game.PlaceId ~= allowedPlaceId then
+-- เช็คเฉพาะถ้าไม่อยู่ในดัน
+if not inDungeon and game.PlaceId ~= allowedPlaceId then
     game.Players.LocalPlayer:Kick("script Sakura Stand")
     return
+end
+
+-- ฟังก์ชันลงดัน
+local function enterDungeon()
+    if not hrp then return end
+
+    inDungeon = true -- เข้าดันแล้ว
+    hrp.CFrame = dungeonCFrame + Vector3.new(0,3,0)
+    task.wait(0.2)
+
+    local portal = Workspace:FindFirstChild("DungeonPortal")
+    local prompt
+    if portal then
+        prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
+
+    if prompt then
+        prompt.HoldDuration = 0
+        interactPrompt(prompt)
+    end
+end
+
+-- หลังออกจากดัน → reset flag
+local function exitDungeon()
+    inDungeon = false
 end
 
 
@@ -203,8 +229,8 @@ autoFarmTab:CreateToggle({
 -- =====================
 -- Auto Dungeon Function
 -- =====================
-
 local autoDungeonEnabled = false
+local followDelay = 0.2 -- เวลาระหว่างเช็คตำแหน่งมอน
 
 -- ตำแหน่ง CFrame ของประตูลงดัน
 local dungeonCFrame = CFrame.new(
@@ -214,16 +240,31 @@ local dungeonCFrame = CFrame.new(
     0, 0, 1
 )
 
--- ฟังก์ชันลงดัน
-local function enterDungeon()
+-- อัปเดต HRP เวลารีเกิด
+plr.CharacterAdded:Connect(function(char)
+    character = char
+    hrp = character:WaitForChild("HumanoidRootPart", 5)
+end)
+
+-- ฟังก์ชันติดหัวมอน (ไม่โจมตี)
+local function followMonster(monster)
+    if not hrp or not monster or not monster.Parent then return end
+
+    local monsterHead = monster:FindFirstChild("Head") or monster:FindFirstChildWhichIsA("BasePart")
+    if monsterHead then
+        hrp.CFrame = monsterHead.CFrame * CFrame.new(0, 6, 0)
+    end
+end
+
+-- ฟังก์ชันลงดัน + ติดหัวมอน
+local function runDungeonStep()
     if not hrp then return end
 
-    -- วาร์ปไปที่ประตู
-    hrp.CFrame = dungeonCFrame + Vector3.new(0, 3, 0)
-
+    -- วาร์ปไปประตู
+    hrp.CFrame = dungeonCFrame + Vector3.new(0, 6, 0)
     task.wait(0.2)
 
-    -- หา ProximityPrompt ที่ตำแหน่งประตู
+    -- หา ProximityPrompt
     local portal = Workspace:FindFirstChild("DungeonPortal")
     local prompt
     if portal then
@@ -232,8 +273,22 @@ local function enterDungeon()
 
     if prompt then
         prompt.HoldDuration = 0
-        interactPrompt(prompt) -- กด E อัตโนมัติ
+        interactPrompt(prompt)
     end
+
+    -- หลังเข้าดัน → วนไปติดหัวมอน
+    task.spawn(function()
+        while autoDungeonEnabled do
+            local living = Workspace:FindFirstChild("Living")
+            if living and living:FindFirstChild("Demon") then
+                for _, monster in ipairs(living.Demon:GetChildren()) do
+                    followMonster(monster)
+                    task.wait(followDelay)
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
 end
 
 -- Main Auto Dungeon Loop
@@ -241,19 +296,20 @@ task.spawn(function()
     while true do
         task.wait(1)
         if autoDungeonEnabled then
-            enterDungeon()
+            runDungeonStep()
         end
     end
 end)
 
--- UI Toggle
+-- UI Toggle รวมทุกขั้น
 autoFarmTab:CreateToggle({
-    Name = "Auto Dungeon กำลังทำ",
+    Name = "Auto Dungeon (Waiting)",
     CurrentValue = false,
     Callback = function(state)
         autoDungeonEnabled = state
     end
 })
+
 
 
 local Players = game:GetService("Players") 
@@ -1018,36 +1074,54 @@ local function AutoSkill()
 end
 
 -- ==================== Auto Attack ====================
-local attackCooldown = 0.1 -- ปรับให้โจมตีเร็วขึ้นตามต้องการ
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- หาตัว Reliable RemoteEvent
+local reliableEvent = ReplicatedStorage
+    :WaitForChild("ABC - First Priority")
+    :WaitForChild("Utility")
+    :WaitForChild("Modules")
+    :WaitForChild("Warp")
+    :WaitForChild("Index")
+    :WaitForChild("Event")
+    :WaitForChild("Reliable")
+
+local attackCooldown = 0.1
 local lastAttack = 0
 
 local function AutoAttackAll()
-    -- ยิงต่อเนื่องจนกว่าจะปิด toggle
     while autoAttackEnabled do
         if tick() - lastAttack >= attackCooldown then
             lastAttack = tick()
 
-            -- M1 Punch RemoteEvent
+            -- ยิง Punch RemoteEvent
             for _, remoteFolder in ipairs(ReplicatedStorage:GetChildren()) do
                 if remoteFolder:IsA("Folder") or remoteFolder:IsA("Model") then
                     local punch = remoteFolder:FindFirstChild("Punch")
                     if punch and punch:IsA("RemoteEvent") then
-                        punch:FireServer()
+                        pcall(function()
+                            punch:FireServer()
+                        end)
                     end
                 end
             end
 
-            -- Reliable RemoteEvent พร้อม args
-            local args = {
-                buffer.fromstring("\015"),
-                buffer.fromstring("\254\001\000\006\003LMB")
-            }
-            reliableEvent:FireServer(unpack(args))
+            -- ยิง Reliable Event ถ้ามี
+            if reliableEvent then
+                local args = {
+                    buffer.fromstring("\015"),
+                    buffer.fromstring("\254\001\000\006\003LMB")
+                }
+                pcall(function()
+                    reliableEvent:FireServer(unpack(args))
+                end)
+            else
+                warn("reliableEvent not found")
+            end
         end
-        task.wait() -- ปล่อยให้ระบบไม่แครช
+        task.wait()
     end
 end
-
 
 -- ==================== Main Loop ====================
 local lastPause = tick()
