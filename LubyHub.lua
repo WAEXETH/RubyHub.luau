@@ -1,35 +1,13 @@
-local allowedPlaceId = 8534845015
-local inDungeon = false
+-- Whitelist PlaceIds (แมพที่อนุญาต)
+local allowedPlaceIds = {
+    [8534845015] = true,     -- Main map (Sakura Stand)
+    [74371530193003] = true, -- Dungeon map
+}
 
--- เช็คเฉพาะถ้าไม่อยู่ในดัน
-if not inDungeon and game.PlaceId ~= allowedPlaceId then
-    game.Players.LocalPlayer:Kick("script Sakura Stand")
+-- เช็คว่าอยู่แมพที่อนุญาตหรือไม่
+if not allowedPlaceIds[game.PlaceId] then
+    game.Players.LocalPlayer:Kick("Script Sakura Stand")
     return
-end
-
--- ฟังก์ชันลงดัน
-local function enterDungeon()
-    if not hrp then return end
-
-    inDungeon = true -- เข้าดันแล้ว
-    hrp.CFrame = dungeonCFrame + Vector3.new(0,3,0)
-    task.wait(0.2)
-
-    local portal = Workspace:FindFirstChild("DungeonPortal")
-    local prompt
-    if portal then
-        prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
-    end
-
-    if prompt then
-        prompt.HoldDuration = 0
-        interactPrompt(prompt)
-    end
-end
-
--- หลังออกจากดัน → reset flag
-local function exitDungeon()
-    inDungeon = false
 end
 
 
@@ -44,6 +22,7 @@ local Window = Rayfield:CreateWindow({
 	Theme = "Default",
 	ToggleUIKeybind = "K",
 })
+
 
 
 local autoFarmTab = Window:CreateTab("Auto Farm", "package")
@@ -226,10 +205,8 @@ autoFarmTab:CreateToggle({
 	end
 })
 
--- =====================
--- Auto Dungeon Function
--- =====================
 local autoDungeonEnabled = false
+local inDungeon = false
 local followDelay = 0.2 -- เวลาระหว่างเช็คตำแหน่งมอน
 
 -- ตำแหน่ง CFrame ของประตูลงดัน
@@ -246,67 +223,79 @@ plr.CharacterAdded:Connect(function(char)
     hrp = character:WaitForChild("HumanoidRootPart", 5)
 end)
 
--- ฟังก์ชันติดหัวมอน (ไม่โจมตี)
+-- ========= ฟังก์ชันย่อย =========
+
+-- ติดหัวมอน / บอส (ไม่โจมตี)
 local function followMonster(monster)
     if not hrp or not monster or not monster.Parent then return end
-
     local monsterHead = monster:FindFirstChild("Head") or monster:FindFirstChildWhichIsA("BasePart")
     if monsterHead then
         hrp.CFrame = monsterHead.CFrame * CFrame.new(0, 6, 0)
     end
 end
 
--- ฟังก์ชันลงดัน + ติดหัวมอน
-local function runDungeonStep()
+-- ฟังก์ชันลงดัน
+local function enterDungeon()
     if not hrp then return end
 
     -- วาร์ปไปประตู
     hrp.CFrame = dungeonCFrame + Vector3.new(0, 6, 0)
     task.wait(0.2)
 
-    -- หา ProximityPrompt
-    local portal = Workspace:FindFirstChild("DungeonPortal")
-    local prompt
+    -- หา ProximityPrompt ของพอร์ทัล
+    local portal = workspace:FindFirstChild("DungeonPortal")
     if portal then
-        prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
-    end
-
-    if prompt then
-        prompt.HoldDuration = 0
-        interactPrompt(prompt)
-    end
-
-    -- หลังเข้าดัน → วนไปติดหัวมอน
-    task.spawn(function()
-        while autoDungeonEnabled do
-            local living = Workspace:FindFirstChild("Living")
-            if living and living:FindFirstChild("Demon") then
-                for _, monster in ipairs(living.Demon:GetChildren()) do
-                    followMonster(monster)
-                    task.wait(followDelay)
-                end
-            end
-            task.wait(0.1)
+        local prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
+        if prompt then
+            prompt.HoldDuration = 0
+            interactPrompt(prompt)
+            inDungeon = true  -- ตั้ง flag หลังเข้าดัน
         end
-    end)
+    end
 end
 
--- Main Auto Dungeon Loop
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if autoDungeonEnabled then
-            runDungeonStep()
+-- ฟังก์ชันฟาร์มมอนทั่วไป + ฟาร์มบอส
+local function huntMonsters()
+    local living = workspace:FindFirstChild("Living")
+    if living then
+        -- ฟาร์มมอนปกติ (Demon)
+        if living:FindFirstChild("Demon") then
+            for _, monster in ipairs(living.Demon:GetChildren()) do
+                followMonster(monster)
+                task.wait(followDelay)
+            end
+        end
+
+        -- ฟาร์มบอส Kokushibo
+        if living:FindFirstChild("Kokushibo") then
+            local boss = living.Kokushibo
+            followMonster(boss)  -- ติดหัวบอส
+            task.wait(followDelay)
         end
     end
-end)
+end
 
--- UI Toggle รวมทุกขั้น
+-- ========= ลูปหลัก =========
+local function autoDungeonLoop()
+    while autoDungeonEnabled do
+        if not inDungeon then
+            enterDungeon()  -- ถ้ายังไม่ลงดัน → พยายามเข้าดัน
+        else
+            huntMonsters() -- อยู่ในดัน → ฟาร์มมอน + บอส
+        end
+        task.wait(0.1)
+    end
+end
+
+-- ========= UI =========
 autoFarmTab:CreateToggle({
-    Name = "Auto Dungeon (Waiting)",
+    Name = "Auto Dungeon",
     CurrentValue = false,
     Callback = function(state)
         autoDungeonEnabled = state
+        if state then
+            task.spawn(autoDungeonLoop)
+        end
     end
 })
 
@@ -320,140 +309,76 @@ local plr = Players.LocalPlayer
 local character = plr.Character or plr.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- Control variables
-local autoChestEnabled = false
-local failedAttempts = {}
+-- =====================
+-- Auto Collect Key (Real-time)
+-- =====================
+local autoKeyEnabled = false
+local collectedKeys = {} -- กันเก็บซ้ำ
 
--- Update character references
-local function updateCharacter()
-	character = plr.Character or plr.CharacterAdded:Wait()
-	hrp = character:WaitForChild("HumanoidRootPart", 5)
-end
-plr.CharacterAdded:Connect(updateCharacter)
-
--- Instant Interact
-local function interactPrompt(prompt)
-	if not prompt then return end
-	pcall(function()
-		fireproximityprompt(prompt, math.huge) -- ใช้ instant interact
-	end)
-end
-
--- หาฟังก์ชันค้นหา Prompt ไว้ใช้หลายที่
+-- หาฟังก์ชันหา ProximityPrompt
 local function findPrompt(obj)
-	for _, child in ipairs(obj:GetChildren()) do
-		if child:IsA("ProximityPrompt") then 
-			return child 
-		end
-		local found = findPrompt(child)
-		if found then return found end
-	end
-	return nil
+    for _, child in ipairs(obj:GetChildren()) do
+        if child:IsA("ProximityPrompt") then 
+            return child 
+        end
+        local found = findPrompt(child)
+        if found then return found end
+    end
+    return nil
 end
 
-local function collectChest(chest)
-    if not chest or not chest:IsDescendantOf(Workspace) then return false end
-    if not hrp then return false end
+-- ฟังก์ชันเก็บ Key
+local function collectKey(key)
+    if not key or not key:IsDescendantOf(Workspace) then return false end
+    if collectedKeys[key] then return false end
 
-    local targetPart = chest:IsA("BasePart") and chest or (chest.PrimaryPart or chest:FindFirstChildWhichIsA("BasePart"))
-    if not targetPart then return false end
+    local prompt = findPrompt(key)
+    if not prompt then return false end
 
-    -- Warp แบบติดกาว
-    for i = 1, 5 do
-        if not chest:IsDescendantOf(Workspace) then break end
-        local currentPos = hrp.Position
-        local targetPos = targetPart.Position + Vector3.new(0,3,0)
-        local stepPos = currentPos:Lerp(targetPos, 0.5)
-        hrp.CFrame = CFrame.new(stepPos)
-        task.wait(0.05)
+    -- warp ไปใกล้ ๆ key
+    if hrp then
+        hrp.CFrame = key:GetPivot() + Vector3.new(0,3,0)
     end
 
-    local success = false
+    task.wait(0.1)
+    prompt.HoldDuration = 0
+    pcall(function()
+        fireproximityprompt(prompt, math.huge)
+    end)
 
-    -- 🔹 ก่อนอื่นลองหาปุ่ม Prompt มากด (Instant Interact)
-    local prompt = findPrompt(chest)
-    if prompt then
-        interactPrompt(prompt)
-        task.wait(0.15)
-        if not chest:IsDescendantOf(Workspace) then
-            return true
-        end
-    end
-
-    -- ถ้า Chest ต้องใช้ Key
-    local hasKey = chest:FindFirstChild("RequiresKey")
-    if hasKey and hasKey.Value == true then
-        local playerKeys = plr:FindFirstChild("Keys")
-        if playerKeys and playerKeys.Value > 0 then
-            local useKeyRemote = ReplicatedStorage:FindFirstChild("UseKey")
-            if useKeyRemote then
-                pcall(function()
-                    useKeyRemote:FireServer(chest)
-                end)
-                task.wait(0.3)
-                success = true
-            end
-        else
-            return false
-        end
-    else
-        -- Chest ปกติ → ใช้ RemoteEvent
-        local interactRemote = ReplicatedStorage:FindFirstChild("GlobalUsedRemotes") 
-            and ReplicatedStorage.GlobalUsedRemotes:FindFirstChild("Interact")
-        if interactRemote then
-            success = pcall(function()
-                interactRemote:FireServer(chest)
-            end)
-            task.wait(0.2)
-        end
-    end
-
-    -- fallback สุดท้ายอีกครั้ง ลองหา Prompt แล้วกดอีกรอบ
-    if not success then
-        local prompt2 = findPrompt(chest)
-        if prompt2 then
-            interactPrompt(prompt2)
-            task.wait(0.2)
-        end
-    end
-
-    if not chest:IsDescendantOf(Workspace) then
+    task.wait(0.2)
+    if not key:IsDescendantOf(Workspace) then
+        collectedKeys[key] = true
         return true
     end
-
-    failedAttempts[chest] = (failedAttempts[chest] or 0) + 1
     return false
 end
 
--- Main Loop Auto Chest
+-- Loop auto key
 task.spawn(function()
-	while true do
-		task.wait(0.3)
-		if autoChestEnabled and Workspace:FindFirstChild("Item") and Workspace.Item:FindFirstChild("Chest") then
-			local chestFolder = Workspace.Item.Chest
-			for _, chest in ipairs(chestFolder:GetChildren()) do
-				if chest.Name == "Chest" then
-					task.spawn(function()
-						while chest:IsDescendantOf(Workspace) and autoChestEnabled do
-							collectChest(chest)
-							task.wait(0.2)
-						end
-					end)
-					task.wait(0.1)
-				end
-			end
-		end
-	end
+    while true do
+        task.wait(0.3)
+        if autoKeyEnabled and Workspace:FindFirstChild("Item") and Workspace.Item:FindFirstChild("Key") then
+            for _, key in ipairs(Workspace.Item.Key:GetChildren()) do
+                if not collectedKeys[key] then
+                    task.spawn(function()
+                        collectKey(key)
+                    end)
+                end
+            end
+        end
+    end
 end)
 
--- Toggle
+-- UI toggle
 autoFarmTab:CreateToggle({
-	Name = "Auto Collect Chest",
-	CurrentValue = false,
-	Callback = function(state)
-		autoChestEnabled = state
-	end
+    Name = "Auto Collect Chest",
+    CurrentValue = false,
+    Callback = function(state)
+        autoKeyEnabled = state
+    end
 })
+
 
 
 local autoUpgradeMaster = false
@@ -910,7 +835,7 @@ for _, chant in ipairs(chants) do
     Tab:CreateButton({
         Name = chant,
         Callback = function()
-            print("ส่ง Chant: " .. chant)
+            
             typeChat(chant)
         end,
     })
@@ -1022,6 +947,70 @@ end)
 local Tab = Window:CreateTab("Auto Use Skills & Attacking M1")
 local DummySection = Tab:CreateSection("Auto Use Skills & Attacking M1")
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
+local autoQEnabled = false
+
+-- ฟังก์ชันกด Q
+local function pressQ()
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+    
+end
+
+-- ฟังก์ชันตรวจสอบ Humanoid พร้อมและ Alive
+local function setupCharacter(char)
+    local humanoid = char:WaitForChild("Humanoid", 5)
+    if humanoid then
+        humanoid.Died:Connect(function()
+            -- รอเกิดใหม่
+            local newChar = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local newHumanoid = newChar:WaitForChild("Humanoid", 5)
+            if autoQEnabled and newHumanoid and newHumanoid.Health > 0 then
+                wait(0.5)
+                pressQ()
+            end
+        end)
+        -- กด Q ครั้งแรกถ้าเปิด auto
+        if autoQEnabled then
+            wait(0.5)
+            pressQ()
+        end
+    end
+end
+
+-- ตรวจสอบตัวละครตอนเริ่ม
+if LocalPlayer.Character then
+    setupCharacter(LocalPlayer.Character)
+end
+
+-- เชื่อม Event เมื่อเกิดใหม่
+LocalPlayer.CharacterAdded:Connect(function(char)
+    setupCharacter(char)
+end)
+
+-- ================== Toggle ==================
+local Toggle = Tab:CreateToggle({
+   Name = "Auto Weapon",
+   CurrentValue = false,
+   Flag = "AutoQToggle",
+   Callback = function(Value)
+       autoQEnabled = Value
+
+       if Value and LocalPlayer.Character then
+           local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+           if humanoid and humanoid.Health > 0 then
+               wait(0.5)
+               pressQ()
+           end
+       end
+   end,
+})
+
+
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -1074,6 +1063,7 @@ local function AutoSkill()
 end
 
 -- ==================== Auto Attack ====================
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- หาตัว Reliable RemoteEvent
