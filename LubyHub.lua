@@ -36,11 +36,8 @@ local plr = Players.LocalPlayer
 local character = plr.Character or plr.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- ใช้เฉพาะ Auto Farm Level
 local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
-
--- ใช้เฉพาะ Auto Collect (ไม่เก็บพวก Farm Level, Chest และ A Nest)
-local COLLECT_IGNORE = {"Box", "Barrel", "BoxDrop", "Chest", "A Nest"}
+local COLLECT_IGNORE = {"Box", "Barrel", "BoxDrop", "Chest", "A Nest", "PerceptionMask"}
 
 local autoFarmEnabled = false
 local autoCollectEnabled = false
@@ -53,27 +50,20 @@ local function updateCharacter()
 end
 plr.CharacterAdded:Connect(updateCharacter)
 
--- ฟังก์ชันเช็คว่าเป็น Farm Level item
 local function isLevelItem(itemName)
 	for _, word in ipairs(LEVEL_ITEM_NAMES) do
-		if string.lower(itemName) == string.lower(word) then
-			return true
-		end
+		if string.lower(itemName) == string.lower(word) then return true end
 	end
 	return false
 end
 
--- ฟังก์ชันเช็คว่าเป็น item ที่ Auto Collect ต้อง ignore
 local function isCollectIgnored(itemName)
 	for _, word in ipairs(COLLECT_IGNORE) do
-		if string.lower(itemName) == string.lower(word) then
-			return true
-		end
+		if string.lower(itemName) == string.lower(word) then return true end
 	end
 	return false
 end
 
--- Instant Interact
 local function interactPrompt(prompt)
 	if not prompt then return end
 	pcall(function()
@@ -81,19 +71,17 @@ local function interactPrompt(prompt)
 	end)
 end
 
--- เก็บ Farm Level Prompt
 local function collectPrompt(prompt)
 	if not prompt or not prompt.Parent or not hrp then return end
 	local targetPart = prompt.Parent:IsA("BasePart") and prompt.Parent or prompt.Parent:FindFirstChildWhichIsA("BasePart")
 	if targetPart then
 		hrp.CFrame = targetPart.CFrame * CFrame.new(0, 3, 0)
-		task.wait(0.2)
+		task.wait(0.1)  -- ลด delay เพื่อวาปเร็ว
 		prompt.HoldDuration = 0
 		interactPrompt(prompt)
 	end
 end
 
--- หา Farm Level Prompts
 local function getValidLevelPrompts()
 	local results = {}
 	for _, v in ipairs(Workspace:GetDescendants()) do
@@ -104,33 +92,27 @@ local function getValidLevelPrompts()
 	return results
 end
 
--- เก็บไอเทมทั่วไป (Auto Collect)
 local function tryCollectItem(item)
 	if not item:IsDescendantOf(Workspace) then return false end
 	if isCollectIgnored(item.Name) then return false end
 
 	local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
 	if not prompt or not prompt.Enabled then
-		if not table.find(retryItems, item) then
-			table.insert(retryItems, item)
-		end
+		if not table.find(retryItems, item) then table.insert(retryItems, item) end
 		return false
 	end
 
-	-- บังคับกดทันที
 	prompt.HoldDuration = 0
 
-	-- วาร์ปไปที่ Prompt โดยตรง
 	local targetPart = prompt.Parent:IsA("BasePart") and prompt.Parent or item
 	if hrp then
 		hrp.CFrame = targetPart.CFrame * CFrame.new(0, 2, 0)
 	end
 
-	task.wait(0.15)
+	task.wait(0.1)  -- ลด delay เพื่อวาปเร็ว
 	interactPrompt(prompt)
+	task.wait(0.05)
 
-	-- ตรวจสอบว่าเก็บสำเร็จ
-	task.wait(0.1)
 	if not item:IsDescendantOf(Workspace) then
 		for i = #retryItems, 1, -1 do
 			if retryItems[i] == item then table.remove(retryItems, i) end
@@ -147,38 +129,32 @@ end
 -- Main Auto Loop
 task.spawn(function()
 	while true do
-		task.wait(0.3)
+		task.wait(0.15)  -- loop เร็วขึ้น
 
 		-- Auto Farm Level
 		if autoFarmEnabled then
-			for _, prompt in ipairs(getValidLevelPrompts()) do
+			local levelPrompts = getValidLevelPrompts()
+			for _, prompt in ipairs(levelPrompts) do
 				if not autoFarmEnabled then break end
-				task.spawn(function()
-					collectPrompt(prompt)
-				end)
-				task.wait(0.1)
+				collectPrompt(prompt)
+				task.wait(0.15)  -- delay สั้นสุดที่ยังเก็บติด
 			end
 		end
 
 		-- Auto Collect Items
 		if autoCollectEnabled and Workspace:FindFirstChild("Item") then
-			-- เก็บไอเทมปกติ
 			for _, item in ipairs(Workspace.Item:GetChildren()) do
 				if not isCollectIgnored(item.Name) then
-					task.spawn(function()
-						tryCollectItem(item)
-					end)
+					tryCollectItem(item)
 					task.wait(0.1)
 				end
 			end
 
-			-- ลองเก็บไอเทมที่เคยเก็บไม่ติด (retry)
+			-- Retry Items
 			for i = #retryItems, 1, -1 do
 				local item = retryItems[i]
 				if item and item:IsDescendantOf(Workspace) then
-					task.spawn(function()
-						tryCollectItem(item)
-					end)
+					tryCollectItem(item)
 					task.wait(0.1)
 				else
 					table.remove(retryItems, i)
@@ -205,17 +181,17 @@ autoFarmTab:CreateToggle({
 	end
 })
 
-local autoDungeonEnabled = false
-local inDungeon = false
-local followDelay = 0.2 -- เวลาระหว่างเช็คตำแหน่งมอน
 
--- ตำแหน่ง CFrame ของประตูลงดัน
-local dungeonCFrame = CFrame.new(
-    -9287.55078, 802.958313, 9028.80469,
-    1, 0, 0,
-    0, 1, 0,
-    0, 0, 1
-)
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local plr = Players.LocalPlayer
+local character = plr.Character or plr.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart", 5)
+
+local autoDungeonEnabled = false
+local followDelay = 0.2 -- เวลาระหว่างเช็คตำแหน่งมอน
+local dungeonCFrame = CFrame.new(-9287.55078, 802.958313, 9028.80469)
+local currentTarget = nil
 
 -- อัปเดต HRP เวลารีเกิด
 plr.CharacterAdded:Connect(function(char)
@@ -223,162 +199,102 @@ plr.CharacterAdded:Connect(function(char)
     hrp = character:WaitForChild("HumanoidRootPart", 5)
 end)
 
--- ========= ฟังก์ชันย่อย =========
+-- ฟังก์ชันกด ProximityPrompt
+local function interactPrompt(prompt)
+    if fireproximityprompt then
+        fireproximityprompt(prompt)
+    else
+        prompt.HoldDuration = 0
+        prompt:InputHoldBegin()
+        task.wait(0.1)
+        prompt:InputHoldEnd()
+    end
+end
 
--- ติดหัวมอน / บอส (ไม่โจมตี)
+-- ฟังก์ชันติดหัวมอน/บอส (กาวอยู่บนหัว หันหน้าไปที่มอน)
 local function followMonster(monster)
     if not hrp or not monster or not monster.Parent then return end
     local monsterHead = monster:FindFirstChild("Head") or monster:FindFirstChildWhichIsA("BasePart")
     if monsterHead then
-        hrp.CFrame = monsterHead.CFrame * CFrame.new(0, 6, 0)
+        local targetPos = monsterHead.Position + Vector3.new(0,6,0)
+        hrp.CFrame = CFrame.new(targetPos, monsterHead.Position)
     end
 end
 
--- ฟังก์ชันลงดัน
-local function enterDungeon()
-    if not hrp then return end
+-- ฟังก์ชันฟาร์มมอน + Target Lock
+local function farmDungeon()
+    task.spawn(function()
+        while autoDungeonEnabled and game.PlaceId == 74371530193003 do
+            local living = Workspace:FindFirstChild("Living")
+            if living then
+                -- Target Lock สำหรับมอนทั่วไป
+                if not currentTarget or not currentTarget.Parent then
+                    currentTarget = nil
+                    for _, monster in ipairs(living:GetChildren()) do
+                        if monster.Name:match("^Demon") then
+                            currentTarget = monster
+                            break
+                        end
+                    end
+                end
 
-    -- วาร์ปไปประตู
-    hrp.CFrame = dungeonCFrame + Vector3.new(0, 6, 0)
-    task.wait(0.2)
+                -- ฟาร์มตัวที่ล็อค
+                if currentTarget and currentTarget.Parent then
+                    followMonster(currentTarget)
+                end
 
-    -- หา ProximityPrompt ของพอร์ทัล
-    local portal = workspace:FindFirstChild("DungeonPortal")
-    if portal then
-        local prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
-        if prompt then
-            prompt.HoldDuration = 0
-            interactPrompt(prompt)
-            inDungeon = true  -- ตั้ง flag หลังเข้าดัน
-        end
-    end
-end
-
--- ฟังก์ชันฟาร์มมอนทั่วไป + ฟาร์มบอส
-local function huntMonsters()
-    local living = workspace:FindFirstChild("Living")
-    if living then
-        -- ฟาร์มมอนปกติ (Demon)
-        if living:FindFirstChild("Demon") then
-            for _, monster in ipairs(living.Demon:GetChildren()) do
-                followMonster(monster)
-                task.wait(followDelay)
+                -- ฟาร์มบอส Kokushibo แยก
+                local boss = living:FindFirstChild("Kokushibo")
+                if boss then
+                    followMonster(boss)
+                end
             end
-        end
-
-        -- ฟาร์มบอส Kokushibo
-        if living:FindFirstChild("Kokushibo") then
-            local boss = living.Kokushibo
-            followMonster(boss)  -- ติดหัวบอส
             task.wait(followDelay)
         end
-    end
+    end)
 end
 
--- ========= ลูปหลัก =========
-local function autoDungeonLoop()
-    while autoDungeonEnabled do
-        if not inDungeon then
-            enterDungeon()  -- ถ้ายังไม่ลงดัน → พยายามเข้าดัน
-        else
-            huntMonsters() -- อยู่ในดัน → ฟาร์มมอน + บอส
+-- ฟังก์ชันลงดัน / เริ่มฟาร์ม
+local function runDungeonStep()
+    if not hrp then return end
+
+    if game.PlaceId ~= 74371530193003 then
+        -- วาร์ปไปประตูเฉพาะถ้าอยู่ในแมพหลัก
+        hrp.CFrame = dungeonCFrame + Vector3.new(0, 6, 0)
+        task.wait(0.2)
+
+        -- หา ProximityPrompt
+        local portal = Workspace:FindFirstChild("DungeonPortal")
+        if portal then
+            local prompt = portal:FindFirstChildWhichIsA("ProximityPrompt", true)
+            if prompt then
+                interactPrompt(prompt)
+            end
         end
-        task.wait(0.1)
+    else
+        -- อยู่ใน Dungeon → เริ่มฟาร์มมอนและบอส
+        farmDungeon()
     end
 end
 
--- ========= UI =========
+-- Main Auto Dungeon Loop
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if autoDungeonEnabled then
+            runDungeonStep()
+        end
+    end
+end)
+
+-- UI Toggle รวมทุกขั้น
 autoFarmTab:CreateToggle({
     Name = "Auto Dungeon",
     CurrentValue = false,
     Callback = function(state)
         autoDungeonEnabled = state
-        if state then
-            task.spawn(autoDungeonLoop)
-        end
     end
 })
-
-
-
-local Players = game:GetService("Players") 
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local plr = Players.LocalPlayer
-local character = plr.Character or plr.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
-
--- =====================
--- Auto Collect Key (Real-time)
--- =====================
-local autoKeyEnabled = false
-local collectedKeys = {} -- กันเก็บซ้ำ
-
--- หาฟังก์ชันหา ProximityPrompt
-local function findPrompt(obj)
-    for _, child in ipairs(obj:GetChildren()) do
-        if child:IsA("ProximityPrompt") then 
-            return child 
-        end
-        local found = findPrompt(child)
-        if found then return found end
-    end
-    return nil
-end
-
--- ฟังก์ชันเก็บ Key
-local function collectKey(key)
-    if not key or not key:IsDescendantOf(Workspace) then return false end
-    if collectedKeys[key] then return false end
-
-    local prompt = findPrompt(key)
-    if not prompt then return false end
-
-    -- warp ไปใกล้ ๆ key
-    if hrp then
-        hrp.CFrame = key:GetPivot() + Vector3.new(0,3,0)
-    end
-
-    task.wait(0.1)
-    prompt.HoldDuration = 0
-    pcall(function()
-        fireproximityprompt(prompt, math.huge)
-    end)
-
-    task.wait(0.2)
-    if not key:IsDescendantOf(Workspace) then
-        collectedKeys[key] = true
-        return true
-    end
-    return false
-end
-
--- Loop auto key
-task.spawn(function()
-    while true do
-        task.wait(0.3)
-        if autoKeyEnabled and Workspace:FindFirstChild("Item") and Workspace.Item:FindFirstChild("Key") then
-            for _, key in ipairs(Workspace.Item.Key:GetChildren()) do
-                if not collectedKeys[key] then
-                    task.spawn(function()
-                        collectKey(key)
-                    end)
-                end
-            end
-        end
-    end
-end)
-
--- UI toggle
-autoFarmTab:CreateToggle({
-    Name = "Auto Collect Chest",
-    CurrentValue = false,
-    Callback = function(state)
-        autoKeyEnabled = state
-    end
-})
-
 
 
 local autoUpgradeMaster = false
@@ -871,7 +787,8 @@ local stickyEnemies = {
     "Paper Final Boss",
     "Paper Curse",
     "Paper Curse Half",
-    "Paper Curse Quarter"
+    "Paper Curse Quarter",
+    
 }
 
 local stickyEnabled = {}
