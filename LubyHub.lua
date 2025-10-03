@@ -526,7 +526,9 @@ local npcSection = npcTeleportTab:CreateSection(" NPC ")
 
 
 local npcTeleportList = {
+
     ["AMM"] = CFrame.new(-9586.11914, 805.007996, 9422.08398, -1, 0, 0, 0, 1, 0, 0, 0, -1),
+    ["Aizen"] = CFrame.new(1608.46777, 3637.11401, 1713.48096, -0.861915767, 0.386633903, -0.328048408, 0.082506448, 0.74529171, 0.661614001, 0.500294089, 0.543189406, -0.674278498),
     ["Auddy"] = CFrame.new(-9497.18457, 805.220459, 9039.4209, 0, 0, 1, 0, 1, 0, -1, 0, 0),
     ["Blacko_Coffee"] = CFrame.new(-82.4833221, -116.369576, 360.841919, 0, 0, 1, 0, 1, 0, -1, 0, 0),
     ["buttersky20000"] = CFrame.new(-9047.70312, 805.00824, 8950.38379, 1, 0, 0, 0, 1, 0, 0, 0, 1),
@@ -788,7 +790,8 @@ local stickyEnemies = {
     "Paper Curse",
     "Paper Curse Half",
     "Paper Curse Quarter",
-    
+    "BarraganWorldBoss"
+
 }
 
 local stickyEnabled = {}
@@ -1180,7 +1183,7 @@ local SliderDetect = Tab:CreateSlider({
 })
 
 
-local AutoKillTab = Window:CreateTab("Auto Kill", "sword")
+local AutoKillTab = Window:CreateTab("PVP", "sword")
 local AutoKillSection = AutoKillTab:CreateSection("Auto Kill Player")
 
 local Players = game:GetService("Players")
@@ -1542,3 +1545,4 @@ AutoKillTab:CreateToggle({
         setNoClip(state)
     end,
 })
+
