@@ -36,7 +36,7 @@ local plr = Players.LocalPlayer
 local character = plr.Character or plr.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
-local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop"} 
+local LEVEL_ITEM_NAMES = {"Box", "Barrel", "BoxDrop","Chest"} 
 local COLLECT_IGNORE = {"Box", "Barrel", "BoxDrop", "Chest", "A Nest", "PerceptionMask"}
 
 local autoFarmEnabled = false
@@ -461,64 +461,42 @@ end
 local teleportTab = Window:CreateTab("Teleport", "map")
 local teleportSection = teleportTab:CreateSection("Teleport")
 
-
+-- ทำเป็น array เพื่อคงลำดับ
 local teleportList = {
-	["Shop"] = CFrame.new(-377.414978, -31.4648972, 1827.23376),
-	["CAFE"] = CFrame.new(-184.333908, -32.6324806, 1450.97107),
-	["book"] = CFrame.new(-48.9889183, -116.247437, 328.828979),
-	["Hollow"] = CFrame.new(-9333.09082, 399.293854, 1739.05737),
-	["PVP"] = CFrame.new(-519.294861, -35.1970901, 1655.45898),
-	["Ronin"] = CFrame.new(-3674.99902, 94.8464127, -1169.98804),
-	["BBQ3"] = CFrame.new(704.550049, 116.210938, -1357.19482),
-	["BaikenPlace"] = CFrame.new(-14445.7402, -22.2789726, -3553.54053),
-	["BossSpawn RoninV2"] = CFrame.new(-352.300415, 8.00000381, 13042.4004),
-	["Chill and relax"] = CFrame.new(-349.424469, -9.99766541, 1176.19006),
-	["Okarun"] = CFrame.new(-3701.47876, 696.754578, 5377.51123),
-	["BossSpawn RoninV1"] = CFrame.new(-26239.3945, 30.2711182, 24850.1602),
-	["EyeZone"] = CFrame.new(-18183.957, 990.572449, 7267.02295),
-	["Wou"] = CFrame.new(-599.39032, -118.328743, 2098.08887),
-	["Dio"] = CFrame.new(7476.32324, -430.687408, -4019.21753),
-	["forestfire"] = CFrame.new(-2035.63354, -386.424042, -5356.22461),
-	["Domain"] = CFrame.new(15668.4658, -379.998291, 25310.0898),
-	["PB"] = CFrame.new(-2602.41211, 646.477661, -3351.8623),
-	["BattleArena"] = CFrame.new(856.786316, -428.90448, -750.567993),
-	["กูไม่รู้มันคือไร"] = CFrame.new(-3143.32495, -1.49950004, -10579.5752),
-	["WOU2"] = CFrame.new(-18689.2637, 931.929993, 7134.66748),
-	["ห้องทำงานพวกโง่"] = CFrame.new(-637.749084, 1.00501442, -262.399475),
-	["เกดุ"] = CFrame.new(-7146.22119, -27.1148205, 1295.23523),
-	["ดาบแดง"] = CFrame.new(-255.541168, 34.4699783, -2851.14014),
-	["Cave"] = CFrame.new(-2284.29199, -393.49118, -4989.96924),
-	["ถ้วย"] = CFrame.new(3813.12231, -157.168457, 4539.01416),
+	{ Name = "BBQ", CFrame = CFrame.new(716.400024, 111.500008, -1357.25, -1, 0, 0, 0, 0, 1, 0, 1, -0) },
+	{ Name = "Baiken PVP", CFrame = CFrame.new(-14445.7402, -22.2789726, -3553.54053, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "WH", CFrame = CFrame.new(-3143.32471, -77.9999695, -10579.5752, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "RoninV2", CFrame = CFrame.new(-352.300415, 8.00000381, 13042.4004, 0, 0, -1, 0, 1, 0, 1, 0, 0) },
+	{ Name = "RoninV1", CFrame = CFrame.new(-26239.3945, 30.2711182, 24850.1602, 0, 0, -1, 0, 1, 0, 1, 0, 0) },
+	{ Name = "Spawn", CFrame = CFrame.new(-11954.3115, 211.630005, 9651.16309, 0, 0, 1, 0, 1, -0, -1, 0, 0) },
+	{ Name = "Spawn mimicry", CFrame = CFrame.new(-255.541168, 34.4699783, -2851.14014, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "Spawnเกดุและลุ้นไอ้ดำเมียตาย", CFrame = CFrame.new(-170.291504, 791.764648, -8037.28125, 0, 0, 1, 0, 1, -0, -1, 0, 0) },
+	{ Name = "SAK", CFrame = CFrame.new(-637.749084, 1.00501442, -262.399475, -1, 0, 0, 0, 1, 0, 0, 0, -1) },
+	{ Name = "AFK", CFrame = CFrame.new(-13074.7344, 698.895874, 8151.92236, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "Okarun", CFrame = CFrame.new(-3696.55884, 634.037964, 5376.30176, -1, 0, 0, 0, 1, 0, 0, 0, -1) },
+	{ Name = "AnubisRequiemDimension", CFrame = CFrame.new(3507.06104, -414.044464, 1148.38892, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "PB", CFrame = CFrame.new(-2602.41211, 646.477661, -3351.8623, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "ElysiaDomain", CFrame = CFrame.new(15668.4658, -379.998291, 25310.0898, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+	{ Name = "RokaLab", CFrame = CFrame.new(-602.00354, -119.628479, 2097.89648, 0, 0, 1, 0, 1, -0, -1, 0, 0) },
+	{ Name = "SpecialAreas", CFrame = CFrame.new(3813.12231, -157.168457, 4539.01416, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
 }
 
-
 local plr = game.Players.LocalPlayer
-for name, cframe in pairs(teleportList) do
+
+-- ใช้ ipairs() เพื่อให้เรียงตามที่เขียนไว้
+for _, v in ipairs(teleportList) do
 	teleportTab:CreateButton({
-		Name = name,
+		Name = v.Name,
 		Callback = function()
 			local character = plr.Character or plr.CharacterAdded:Wait()
 			local hrp = character:WaitForChild("HumanoidRootPart")
-
 			if hrp then
-				hrp.CFrame = cframe
+				hrp.CFrame = v.CFrame
 			end
 		end
 	})
 end
 
-
-for name, cframe in pairs(teleportList) do
-	teleportTab:CreateButton({
-		Name = name,
-		Callback = function()
-			if hrp then
-				hrp.CFrame = cframe
-				
-			end
-		end
-	})
-end
 
 
 local npcTeleportTab = Window:CreateTab("Teleport NPC", "users")
@@ -1546,3 +1524,8 @@ AutoKillTab:CreateToggle({
     end,
 })
 
+
+
+
+print("PlaceId:", game.PlaceId)
+print("JobId:", game.JobId) 
