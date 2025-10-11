@@ -347,6 +347,30 @@ autoFarmTab:CreateToggle({
 })
 
 
+
+local Remote = game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("ArcadePurchase")
+local args = {false, false, 10}
+local autoEat = false
+
+
+autoFarmTab:CreateToggle({
+    Name = "Auto Random skin",
+    CurrentValue = false,
+    Flag = "AutoEatToggle",
+    Callback = function(state)
+        autoEat = state
+        if state then
+            task.spawn(function()
+                while autoEat do
+                    Remote:FireServer(unpack(args))
+                    task.wait(1) -- หน่วงเวลา ปรับได้
+                end
+            end)
+        end
+    end
+})
+
+
 local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
 local autoSellSection = autoSellTab:CreateSection("Sell")
 
@@ -457,13 +481,13 @@ for _, itemName in ipairs(sellableItems) do
 end
 
 
-
 local teleportTab = Window:CreateTab("Teleport", "map")
 local teleportSection = teleportTab:CreateSection("Teleport")
 
 -- ทำเป็น array เพื่อคงลำดับ
 local teleportList = {
 	{ Name = "BBQ", CFrame = CFrame.new(716.400024, 111.500008, -1357.25, -1, 0, 0, 0, 0, 1, 0, 1, -0) },
+    { Name = "SHOP", CFrame = CFrame.new(-9513.99219, 808.960388, 9033.05176, 0.982423484, -0, -0.186665744, 0, 1, -0, 0.186665744, 0, 0.982423484) },
 	{ Name = "Baiken PVP", CFrame = CFrame.new(-14445.7402, -22.2789726, -3553.54053, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
 	{ Name = "WH", CFrame = CFrame.new(-3143.32471, -77.9999695, -10579.5752, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
 	{ Name = "RoninV2", CFrame = CFrame.new(-352.300415, 8.00000381, 13042.4004, 0, 0, -1, 0, 1, 0, 1, 0, 0) },
@@ -478,7 +502,7 @@ local teleportList = {
 	{ Name = "PB", CFrame = CFrame.new(-2602.41211, 646.477661, -3351.8623, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
 	{ Name = "ElysiaDomain", CFrame = CFrame.new(15668.4658, -379.998291, 25310.0898, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
 	{ Name = "RokaLab", CFrame = CFrame.new(-602.00354, -119.628479, 2097.89648, 0, 0, 1, 0, 1, -0, -1, 0, 0) },
-	{ Name = "SpecialAreas", CFrame = CFrame.new(3813.12231, -157.168457, 4539.01416, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
+    { Name = "SpecialAreas", CFrame = CFrame.new(3813.12231, -157.168457, 4539.01416, 1, 0, 0, 0, 1, 0, 0, 0, 1) },
 }
 
 local plr = game.Players.LocalPlayer
@@ -637,7 +661,6 @@ npcTeleportTab:CreateButton({
         teleportToNPCHead("Kuzma")
     end,
 })
-
 
 local roninQuestTab = Window:CreateTab("Ronin Quest", "target")
 local roninSection = roninQuestTab:CreateSection("Ronin Quest V2")
@@ -841,72 +864,8 @@ RunService.RenderStepped:Connect(function()
 end)
 
 
-
 local Tab = Window:CreateTab("Auto Use Skills & Attacking M1")
 local DummySection = Tab:CreateSection("Auto Use Skills & Attacking M1")
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local LocalPlayer = Players.LocalPlayer
-
-local autoQEnabled = false
-
--- ฟังก์ชันกด Q
-local function pressQ()
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
-    
-end
-
--- ฟังก์ชันตรวจสอบ Humanoid พร้อมและ Alive
-local function setupCharacter(char)
-    local humanoid = char:WaitForChild("Humanoid", 5)
-    if humanoid then
-        humanoid.Died:Connect(function()
-            -- รอเกิดใหม่
-            local newChar = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            local newHumanoid = newChar:WaitForChild("Humanoid", 5)
-            if autoQEnabled and newHumanoid and newHumanoid.Health > 0 then
-                wait(0.5)
-                pressQ()
-            end
-        end)
-        -- กด Q ครั้งแรกถ้าเปิด auto
-        if autoQEnabled then
-            wait(0.5)
-            pressQ()
-        end
-    end
-end
-
--- ตรวจสอบตัวละครตอนเริ่ม
-if LocalPlayer.Character then
-    setupCharacter(LocalPlayer.Character)
-end
-
--- เชื่อม Event เมื่อเกิดใหม่
-LocalPlayer.CharacterAdded:Connect(function(char)
-    setupCharacter(char)
-end)
-
--- ================== Toggle ==================
-local Toggle = Tab:CreateToggle({
-   Name = "Auto Weapon",
-   CurrentValue = false,
-   Flag = "AutoQToggle",
-   Callback = function(Value)
-       autoQEnabled = Value
-
-       if Value and LocalPlayer.Character then
-           local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-           if humanoid and humanoid.Health > 0 then
-               wait(0.5)
-               pressQ()
-           end
-       end
-   end,
-})
 
 
 local RunService = game:GetService("RunService")
@@ -1161,7 +1120,7 @@ local SliderDetect = Tab:CreateSlider({
 })
 
 
-local AutoKillTab = Window:CreateTab("PVP", "sword")
+local AutoKillTab = Window:CreateTab("Auto Kill", "sword")
 local AutoKillSection = AutoKillTab:CreateSection("Auto Kill Player")
 
 local Players = game:GetService("Players")
@@ -1523,9 +1482,3 @@ AutoKillTab:CreateToggle({
         setNoClip(state)
     end,
 })
-
-
-
-
-print("PlaceId:", game.PlaceId)
-print("JobId:", game.JobId) 
