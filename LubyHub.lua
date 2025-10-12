@@ -371,6 +371,141 @@ autoFarmTab:CreateToggle({
 })
 
 
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local autoBlockEnabled = false
+local followDistance = 3 -- ระยะห่างจาก Dummy
+
+-- Remote ของแบบที่ 1
+local ReliableRemote = ReplicatedStorage:WaitForChild("ABC - First Priority")
+    :WaitForChild("Utility"):WaitForChild("Modules"):WaitForChild("Warp")
+    :WaitForChild("Index"):WaitForChild("Event"):WaitForChild("Reliable")
+
+-- Remote ของแบบที่ 2
+local BlockRemote = ReplicatedStorage:WaitForChild("SummerTimeRemote"):WaitForChild("Block")
+
+-- ฟังก์ชันบล็อกแบบที่ 1
+local function holdBlockType1()
+    local args = {
+        "\016",
+        "\254\002\000\006\001F\005\001"
+    }
+    while autoBlockEnabled do
+        pcall(function()
+            ReliableRemote:FireServer(unpack(args))
+        end)
+        task.wait(0.05)
+    end
+end
+
+-- ฟังก์ชันบล็อกแบบที่ 2
+local function holdBlockType2()
+    local args = {true}
+    while autoBlockEnabled do
+        pcall(function()
+            BlockRemote:FireServer(unpack(args))
+        end)
+        task.wait(0.05)
+    end
+end
+
+-- ฟังก์ชันติดกาว Dummy
+local function followAttackingDummy()
+    while autoBlockEnabled do
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local hrp = character.HumanoidRootPart
+            local closestDummy = nil
+            local shortestDistance = math.huge
+
+            for _, dummy in pairs(workspace.Living:GetChildren()) do
+                if dummy:FindFirstChild("Attacking") and dummy.Attacking.Value then
+                    local distance = (hrp.Position - dummy.Position).Magnitude
+                    if distance < shortestDistance then
+                        shortestDistance = distance
+                        closestDummy = dummy
+                    end
+                end
+            end
+
+            if closestDummy then
+                local direction = (closestDummy.Position - hrp.Position).Unit
+                local targetPos = closestDummy.Position - direction * followDistance
+                hrp.CFrame = CFrame.new(targetPos, closestDummy.Position)
+            end
+        end
+        task.wait(0.03)
+    end
+end
+
+
+
+autoFarmTab:CreateToggle({
+    Name = "Auto Block Bug!!!!!!",
+    CurrentValue = false,
+    Flag = "AutoBlockDummyToggle",
+    Callback = function(value)
+        autoBlockEnabled = value
+        if value then
+            spawn(holdBlockType1)
+            spawn(holdBlockType2)
+            spawn(followAttackingDummy)
+        end
+    end
+})
+
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local GlobalRemotes = ReplicatedStorage:WaitForChild("GlobalUsedRemotes")
+
+-- ฟังก์ชัน
+local function TokenToMoney()
+    local args = {"T4C"}
+    GlobalRemotes:WaitForChild("TokenExchange"):FireServer(unpack(args))
+    
+end
+
+local function MoneyToToken()
+    local args = {"C4T"}
+    GlobalRemotes:WaitForChild("TokenExchange"):FireServer(unpack(args))
+    
+end
+
+local function GetDailyQuest()
+    GlobalRemotes:WaitForChild("GetDailyQuest"):FireServer()
+    
+end
+
+
+-- สร้างปุ่ม Button เรียกใช้ฟังก์ชัน
+autoFarmTab:CreateButton({
+    Name = "Tokens for Money",
+    Callback = function()
+        TokenToMoney()
+    end
+})
+
+autoFarmTab:CreateButton({
+    Name = "Money for Tokens",
+    Callback = function()
+        MoneyToToken()
+    end
+})
+
+autoFarmTab:CreateButton({
+    Name = "Accept daily quest",
+    Callback = function()
+        GetDailyQuest()
+    end
+})
+
+
+
+
 local autoSellTab = Window:CreateTab("Auto Sell", "shopping-cart")
 local autoSellSection = autoSellTab:CreateSection("Sell")
 
@@ -863,6 +998,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- ==================== Auto Block & Dummy Follow ====================
 
 local Tab = Window:CreateTab("Auto Use Skills & Attacking M1")
 local DummySection = Tab:CreateSection("Auto Use Skills & Attacking M1")
@@ -1107,7 +1243,7 @@ local SliderCooldown = Tab:CreateSlider({
 })
 
 -- Slider Detect Radius
-local SliderDetect = Tab:CreateSlider({
+local Toggle = Tab:CreateToggle({
     Name = "Detect Range",
     Range = {5, 50},
     Increment = 1,
@@ -1118,6 +1254,8 @@ local SliderDetect = Tab:CreateSlider({
         detectRadius = value
     end,
 })
+
+
 
 
 local AutoKillTab = Window:CreateTab("Auto Kill", "sword")
@@ -1481,4 +1619,54 @@ AutoKillTab:CreateToggle({
         noclipEnabled = state
         setNoClip(state)
     end,
+})
+
+
+AutoKillTab:CreateButton({
+    Name = "Rejoin",
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+
+        -- Rejoin เซิฟเวอร์เดิม
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end
+})
+
+
+AutoKillTab:CreateButton({
+    Name = "Hop Server",
+    Callback = function()
+        local HttpService = game:GetService("HttpService")
+        local TeleportService = game:GetService("TeleportService")
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+
+        -- ดึงรายการเซิฟเวอร์จาก Roblox API
+        local servers = {}
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(
+                game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+            )
+        end)
+
+        if success and result and result.data then
+            for _, v in pairs(result.data) do
+                if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                    table.insert(servers, v.id)
+                end
+            end
+        end
+
+        if #servers > 0 then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+        else
+            Rayfield:Notify({
+                Title = "Server Switch",
+                Content = "ไม่พบเซิฟว่างในตอนนี้",
+                Duration = 4
+            })
+        end
+    end
 })
