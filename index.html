@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roblox Script Hub</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Poppins', sans-serif; }
+    body {
+      height: 100vh;
+      background: radial-gradient(circle at center, #0a0a0a, #000000);
+      color: #eee;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* --- Animated Lines Background --- */
+    .lines { position:absolute; width:100%; height:100%; overflow:hidden; top:0; left:0; z-index:0; }
+    .lines span {
+      position:absolute;
+      display:block;
+      width:2px;
+      background: linear-gradient(180deg, transparent, #ccc);
+      animation: drop 5s linear infinite;
+      opacity:0.1;
+    }
+    @keyframes drop {
+      0% { transform: translateY(-200px); opacity:0; }
+      30% { opacity:0.3; }
+      100% { transform: translateY(110vh); opacity:0; }
+    }
+
+    /* --- Main Content --- */
+    .container { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding:0 20px; }
+    h1 { font-size:3rem; color:#eee; margin-bottom:20px; }
+    p { font-size:1.1rem; color:#ccc; margin-bottom:40px; max-width:600px; }
+    .buttons { display:flex; gap:20px; }
+
+    /* --- Buttons 3D --- */
+    .btn {
+      padding:12px 30px;
+      border-radius:8px;
+      background: transparent;
+      cursor: pointer;
+      perspective: 800px;
+      position: relative;
+      transition: 0.3s background, 0.3s color, 0.3s transform, 0.3s box-shadow;
+      color: #eee;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      top:0; left:0; right:0; bottom:0;
+      border-radius: 8px;
+      border:2px solid #eee;
+      z-index: -1;
+      transition: 0.3s transform, 0.3s box-shadow;
+      transform: translateZ(0);
+      box-shadow: 0 0 0 #eee;
+    }
+    .btn span {
+      display: inline-block;
+      transition: 0.3s transform, 0.3s text-shadow;
+      transform-style: preserve-3d;
+    }
+    .btn:hover::before {
+      transform: translateZ(15px) rotateX(-10deg) rotateY(10deg);
+      box-shadow: 2px 4px 15px #aaa;
+    }
+    .btn:hover span {
+      transform: rotateX(-15deg) rotateY(15deg) scale(1.2);
+      text-shadow: 
+         1px 1px 0 #ccc,
+         2px 2px 0 #aaa,
+         3px 3px 0 #888;
+    }
+    .btn:hover { background:#222; color:#fff; }
+
+    footer { position:absolute; bottom:15px; width:100%; text-align:center; font-size:0.85rem; color:#555; }
+
+    /* --- Script Modal --- */
+    .modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none;
+      justify-content: center; align-items: center; background: rgba(0,0,0,0.85); z-index: 10;
+    }
+    .modal-content {
+      background: #111; padding: 20px; border-radius: 10px; max-width: 500px; width: 90%;
+      box-shadow: 0 0 15px #ccc;
+      display: flex; flex-direction: column;
+      gap: 15px;
+    }
+    .modal textarea {
+      width: 100%; height: 150px; background:#000; color:#eee; border:1px solid #ccc; border-radius:5px; padding:10px;
+      font-family: monospace; font-size: 0.9rem;
+      resize:none;
+    }
+    .modal button {
+      align-self:flex-end;
+      padding:8px 20px;
+      border:none;
+      border-radius:5px;
+      background:#333;
+      color:#eee;
+      font-weight:500;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    .modal button:hover { background:#555; color:#fff; }
+  </style>
+</head>
+<body>
+  <div class="lines" id="lines"></div>
+
+  <div class="container">
+    <h1>Roblox Script Luby Hub</h1>
+    <p>Powerful, Secure, and Fast — your ultimate experience for Roblox.</p>
+    <div class="buttons">
+      <button class="btn" id="getScriptBtn"><span>Get Script</span></button>
+      <button class="btn" id="joinDiscordBtn"><span>Join Discord</span></button>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="scriptModal">
+    <div class="modal-content">
+      <h2>Your Script</h2>
+      <textarea id="scriptBox" readonly>loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/refs/heads/main/kuy.lua"))()</textarea>
+      <button id="copyScriptBtn">Copy Script</button>
+    </div>
+  </div>
+
+  <script>
+    // Background Lines
+    const linesContainer = document.getElementById('lines');
+    for (let i=0; i<25; i++){
+      const span = document.createElement('span');
+      span.style.left = Math.random() * 100 + '%';
+      span.style.animationDelay = Math.random() * 5 + 's';
+      span.style.height = 50 + Math.random()*100 + 'px';
+      linesContainer.appendChild(span);
+    }
+
+    // Modal Logic
+    const getScriptBtn = document.getElementById('getScriptBtn');
+    const joinDiscordBtn = document.getElementById('joinDiscordBtn');
+    const scriptModal = document.getElementById('scriptModal');
+    const copyScriptBtn = document.getElementById('copyScriptBtn');
+    const scriptBox = document.getElementById('scriptBox');
+
+    getScriptBtn.addEventListener('click', () => { scriptModal.style.display = 'flex'; });
+    scriptModal.addEventListener('click', e => { if(e.target === scriptModal) scriptModal.style.display = 'none'; });
+    copyScriptBtn.addEventListener('click', () => {
+      scriptBox.select();
+      navigator.clipboard.writeText(scriptBox.value)
+        .then(()=> alert('Script copied!'))
+        .catch(()=> alert('Failed to copy'));
+    });
+    joinDiscordBtn.addEventListener('click', () => { window.open('https://discord.gg/KqT59MXB7B', '_blank'); });
+  </script>
+</body>
+</html>
