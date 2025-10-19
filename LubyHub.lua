@@ -351,111 +351,35 @@ autoFarmTab:CreateToggle({
 local Remote = game:GetService("ReplicatedStorage"):WaitForChild("GlobalUsedRemotes"):WaitForChild("ArcadePurchase")
 local args = {false, false, 10}
 local autoEat = false
-
+local autoEatThread -- เก็บ Thread ที่รันอยู่ เพื่อหยุดได้จริง
 
 autoFarmTab:CreateToggle({
-    Name = "Auto Random skin",
+    Name = "Auto Random Skin",
     CurrentValue = false,
     Flag = "AutoEatToggle",
     Callback = function(state)
         autoEat = state
+
+        -- ถ้ากดเปิด
         if state then
-            task.spawn(function()
+            autoEatThread = task.spawn(function()
                 while autoEat do
                     Remote:FireServer(unpack(args))
-                    task.wait(1) -- หน่วงเวลา ปรับได้
+                    task.wait(1) -- ปรับความเร็วได้
                 end
             end)
+
+        -- ถ้ากดปิด
+        else
+            autoEat = false
+            if autoEatThread then
+                task.cancel(autoEatThread)
+                autoEatThread = nil
+            end
         end
     end
 })
 
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-local autoBlockEnabled = false
-local followDistance = 3 -- ระยะห่างจาก Dummy
-
--- Remote ของแบบที่ 1
-local ReliableRemote = ReplicatedStorage:WaitForChild("ABC - First Priority")
-    :WaitForChild("Utility"):WaitForChild("Modules"):WaitForChild("Warp")
-    :WaitForChild("Index"):WaitForChild("Event"):WaitForChild("Reliable")
-
--- Remote ของแบบที่ 2
-local BlockRemote = ReplicatedStorage:WaitForChild("SummerTimeRemote"):WaitForChild("Block")
-
--- ฟังก์ชันบล็อกแบบที่ 1
-local function holdBlockType1()
-    local args = {
-        "\016",
-        "\254\002\000\006\001F\005\001"
-    }
-    while autoBlockEnabled do
-        pcall(function()
-            ReliableRemote:FireServer(unpack(args))
-        end)
-        task.wait(0.05)
-    end
-end
-
--- ฟังก์ชันบล็อกแบบที่ 2
-local function holdBlockType2()
-    local args = {true}
-    while autoBlockEnabled do
-        pcall(function()
-            BlockRemote:FireServer(unpack(args))
-        end)
-        task.wait(0.05)
-    end
-end
-
--- ฟังก์ชันติดกาว Dummy
-local function followAttackingDummy()
-    while autoBlockEnabled do
-        local character = LocalPlayer.Character
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            local hrp = character.HumanoidRootPart
-            local closestDummy = nil
-            local shortestDistance = math.huge
-
-            for _, dummy in pairs(workspace.Living:GetChildren()) do
-                if dummy:FindFirstChild("Attacking") and dummy.Attacking.Value then
-                    local distance = (hrp.Position - dummy.Position).Magnitude
-                    if distance < shortestDistance then
-                        shortestDistance = distance
-                        closestDummy = dummy
-                    end
-                end
-            end
-
-            if closestDummy then
-                local direction = (closestDummy.Position - hrp.Position).Unit
-                local targetPos = closestDummy.Position - direction * followDistance
-                hrp.CFrame = CFrame.new(targetPos, closestDummy.Position)
-            end
-        end
-        task.wait(0.03)
-    end
-end
-
-
-
-autoFarmTab:CreateToggle({
-    Name = "Auto Block Bug!!!!!!",
-    CurrentValue = false,
-    Flag = "AutoBlockDummyToggle",
-    Callback = function(value)
-        autoBlockEnabled = value
-        if value then
-            spawn(holdBlockType1)
-            spawn(holdBlockType2)
-            spawn(followAttackingDummy)
-        end
-    end
-})
 
 
 
@@ -926,7 +850,8 @@ local stickyEnemies = {
     "Paper Curse",
     "Paper Curse Half",
     "Paper Curse Quarter",
-    "BarraganWorldBoss"
+    "BarraganWorldBoss",
+    "The Copo",
 
 }
 
@@ -1142,117 +1067,117 @@ local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
 local autoParryEnabled = false
 local parryCooldown = 2.5
-local parryHoldTime = 1.5 -- เวลาค้าง F ก่อนปล่อย
+local parryHoldTime = 1.5 -- เวลากดค้าง F ก่อนปล่อย
 local lastParry = 0
-
--- Detect range
 local detectRadius = 15
+
 local activeThreats = {}
 local isHolding = false
 
 -- เริ่มกดค้าง F
 local function startHold()
-    if not isHolding then
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        isHolding = true
-    end
+	if not isHolding then
+		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+		isHolding = true
+	end
 end
 
 -- ปล่อย F = ทำ Parry
 local function releaseParry()
-    if isHolding then
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        isHolding = false
-        lastParry = tick()
-    end
+	if isHolding then
+		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+		isHolding = false
+		lastParry = tick()
+	end
 end
 
--- ตรวจหาใกล้ตัว
+-- ตรวจหา Threat ใกล้ตัว
 local function detectThreats()
-    for obj, _ in pairs(activeThreats) do
-        if obj.Parent and obj:IsA("BasePart") then
-            local distance = (obj.Position - humanoidRootPart.Position).Magnitude
-            if distance <= detectRadius then
-                return true
-            end
-        else
-            activeThreats[obj] = nil
-        end
-    end
-    return false
+	for obj, _ in pairs(activeThreats) do
+		if obj and obj.Parent and obj:IsA("BasePart") then
+			local distance = (obj.Position - humanoidRootPart.Position).Magnitude
+			if distance <= detectRadius then
+				return true
+			end
+		else
+			activeThreats[obj] = nil
+		end
+	end
+	return false
 end
 
--- ฟัง Event เมื่อมี object โผล่มา
+-- เมื่อมีวัตถุใหม่เกิดใน workspace
 workspace.DescendantAdded:Connect(function(obj)
-    if obj:IsA("BasePart") then
-        local name = obj.Name:lower()
-        if name:find("hitbox") or name:find("projectile") then
-            activeThreats[obj] = true
-            obj.AncestryChanged:Connect(function(_, parent)
-                if not parent then
-                    activeThreats[obj] = nil
-                end
-            end)
-        end
-    end
+	if obj:IsA("BasePart") then
+		local name = obj.Name:lower()
+		if name:find("hitbox") or name:find("projectile") then
+			activeThreats[obj] = true
+			obj.AncestryChanged:Connect(function(_, parent)
+				if not parent then
+					activeThreats[obj] = nil
+				end
+			end)
+		end
+	end
 end)
 
--- Loop ตรวจจับ
+-- วนลูปตรวจจับ
 RunService.Heartbeat:Connect(function()
-    if autoParryEnabled and humanoidRootPart then
-        local now = tick()
+	if autoParryEnabled and humanoidRootPart then
+		local now = tick()
 
-        -- เริ่มกดค้างไว้ก่อน
-        if not isHolding and (now - lastParry) >= parryCooldown then
-            startHold()
-        end
+		-- เริ่มกดค้างไว้ก่อน
+		if not isHolding and (now - lastParry) >= parryCooldown then
+			startHold()
+		end
 
-        -- ถ้ามี Threat เข้ามาใกล้ → ปล่อยเพื่อ Parry
-        if isHolding and detectThreats() then
-            releaseParry()
-        end
-    else
-        -- ถ้าปิดระบบ → ปล่อยปุ่ม F ถ้าค้างอยู่
-        if isHolding then
-            releaseParry()
-        end
-    end
+		-- ถ้ามี Threat ใกล้ → ปล่อยเพื่อ Parry
+		if isHolding and detectThreats() then
+			releaseParry()
+		end
+	else
+		-- ถ้าปิดระบบ → ปล่อยปุ่ม F ถ้าค้างอยู่
+		if isHolding then
+			releaseParry()
+		end
+	end
 end)
 
--- UI Toggle
+--------------------------------
+-- 🌟 Rayfield UI ส่วนควบคุม --
+--------------------------------
+
 local Toggle = Tab:CreateToggle({
-    Name = "Auto Parry v2",
-    CurrentValue = false,
-    Flag = "AutoParrySmart",
-    Callback = function(state)
-        autoParryEnabled = state
-    end,
+	Name = "Auto Parry v2",
+	CurrentValue = false,
+	Flag = "AutoParrySmart",
+	Callback = function(state)
+		autoParryEnabled = state
+	end,
 })
 
--- Slider Cooldown
 local SliderCooldown = Tab:CreateSlider({
-    Name = "Parry Cooldown",
-    Range = {0.2, 5},
-    Increment = 0.1,
-    Suffix = "s",
-    CurrentValue = parryCooldown,
-    Flag = "ParryCooldownSlider",
-    Callback = function(value)
-        parryCooldown = value
-    end,
+	Name = "Parry Cooldown",
+	Range = {0.2, 5},
+	Increment = 0.1,
+	Suffix = "s",
+	CurrentValue = parryCooldown,
+	Flag = "ParryCooldownSlider",
+	Callback = function(value)
+		parryCooldown = value
+	end,
 })
 
--- Slider Detect Radius
-local Toggle = Tab:CreateToggle({
-    Name = "Detect Range",
-    Range = {5, 50},
-    Increment = 1,
-    Suffix = " studs",
-    CurrentValue = detectRadius,
-    Flag = "DetectRadiusSlider",
-    Callback = function(value)
-        detectRadius = value
-    end,
+local SliderDetect = Tab:CreateSlider({
+	Name = "Detect Range",
+	Range = {5, 50},
+	Increment = 1,
+	Suffix = " studs",
+	CurrentValue = detectRadius,
+	Flag = "DetectRadiusSlider",
+	Callback = function(value)
+		detectRadius = value
+	end,
 })
 
 
@@ -1629,7 +1554,7 @@ AutoKillTab:CreateButton({
         local Players = game:GetService("Players")
         local LocalPlayer = Players.LocalPlayer
 
-        -- Rejoin เซิฟเวอร์เดิม
+        
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
     end
 })
@@ -1643,7 +1568,7 @@ AutoKillTab:CreateButton({
         local Players = game:GetService("Players")
         local LocalPlayer = Players.LocalPlayer
 
-        -- ดึงรายการเซิฟเวอร์จาก Roblox API
+        
         local servers = {}
         local success, result = pcall(function()
             return HttpService:JSONDecode(
@@ -1664,9 +1589,10 @@ AutoKillTab:CreateButton({
         else
             Rayfield:Notify({
                 Title = "Server Switch",
-                Content = "ไม่พบเซิฟว่างในตอนนี้",
+                Content = "ไม่พบเซิฟว่าง",
                 Duration = 4
             })
         end
     end
 })
+
