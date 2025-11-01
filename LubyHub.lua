@@ -23,6 +23,13 @@ local Window = Rayfield:CreateWindow({
 	ToggleUIKeybind = "K",
 })
 
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new(), workspace.CurrentCamera.CFrame)
+end)
 
 
 local autoFarmTab = Window:CreateTab("Auto Farm", "package")
@@ -852,6 +859,7 @@ local stickyEnemies = {
     "Paper Curse Quarter",
     "BarraganWorldBoss",
     "The Copo",
+    "MenosWeak"
 
 }
 
@@ -1055,131 +1063,6 @@ RunService.Heartbeat:Connect(function()
         if autoAttackEnabled then AutoAttackAll() end
     end
 end)
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
-local autoParryEnabled = false
-local parryCooldown = 2.5
-local parryHoldTime = 1.5 -- เวลากดค้าง F ก่อนปล่อย
-local lastParry = 0
-local detectRadius = 15
-
-local activeThreats = {}
-local isHolding = false
-
--- เริ่มกดค้าง F
-local function startHold()
-	if not isHolding then
-		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-		isHolding = true
-	end
-end
-
--- ปล่อย F = ทำ Parry
-local function releaseParry()
-	if isHolding then
-		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-		isHolding = false
-		lastParry = tick()
-	end
-end
-
--- ตรวจหา Threat ใกล้ตัว
-local function detectThreats()
-	for obj, _ in pairs(activeThreats) do
-		if obj and obj.Parent and obj:IsA("BasePart") then
-			local distance = (obj.Position - humanoidRootPart.Position).Magnitude
-			if distance <= detectRadius then
-				return true
-			end
-		else
-			activeThreats[obj] = nil
-		end
-	end
-	return false
-end
-
--- เมื่อมีวัตถุใหม่เกิดใน workspace
-workspace.DescendantAdded:Connect(function(obj)
-	if obj:IsA("BasePart") then
-		local name = obj.Name:lower()
-		if name:find("hitbox") or name:find("projectile") then
-			activeThreats[obj] = true
-			obj.AncestryChanged:Connect(function(_, parent)
-				if not parent then
-					activeThreats[obj] = nil
-				end
-			end)
-		end
-	end
-end)
-
--- วนลูปตรวจจับ
-RunService.Heartbeat:Connect(function()
-	if autoParryEnabled and humanoidRootPart then
-		local now = tick()
-
-		-- เริ่มกดค้างไว้ก่อน
-		if not isHolding and (now - lastParry) >= parryCooldown then
-			startHold()
-		end
-
-		-- ถ้ามี Threat ใกล้ → ปล่อยเพื่อ Parry
-		if isHolding and detectThreats() then
-			releaseParry()
-		end
-	else
-		-- ถ้าปิดระบบ → ปล่อยปุ่ม F ถ้าค้างอยู่
-		if isHolding then
-			releaseParry()
-		end
-	end
-end)
-
---------------------------------
--- 🌟 Rayfield UI ส่วนควบคุม --
---------------------------------
-
-local Toggle = Tab:CreateToggle({
-	Name = "Auto Parry v2",
-	CurrentValue = false,
-	Flag = "AutoParrySmart",
-	Callback = function(state)
-		autoParryEnabled = state
-	end,
-})
-
-local SliderCooldown = Tab:CreateSlider({
-	Name = "Parry Cooldown",
-	Range = {0.2, 5},
-	Increment = 0.1,
-	Suffix = "s",
-	CurrentValue = parryCooldown,
-	Flag = "ParryCooldownSlider",
-	Callback = function(value)
-		parryCooldown = value
-	end,
-})
-
-local SliderDetect = Tab:CreateSlider({
-	Name = "Detect Range",
-	Range = {5, 50},
-	Increment = 1,
-	Suffix = " studs",
-	CurrentValue = detectRadius,
-	Flag = "DetectRadiusSlider",
-	Callback = function(value)
-		detectRadius = value
-	end,
-})
-
 
 
 
@@ -1595,4 +1478,3 @@ AutoKillTab:CreateButton({
         end
     end
 })
-
