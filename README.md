@@ -11,9 +11,9 @@
 
 ### 💎 Roblox Script Hub — Fast. Reliable. Free.
 
-![Owner](Screenshot 2026-05-05 084709.png)
-![Dev](Screenshot 2026-05-05 084637.png)
-![Support](Screenshot 2026-05-05 084650.png)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge)
+![Games](https://img.shields.io/badge/Games-4%20Supported-blueviolet?style=for-the-badge)
+![License](https://img.shields.io/badge/Use%20At-Your%20Own%20Risk-red?style=for-the-badge)
 
 </div>
 
@@ -28,8 +28,7 @@
 |  Rogue Piece | ✅ Supported |
 |  A Universal Time  | ✅ Supported |
 |  Last Run | ✅ Supported |
-| FeedYourTeto   | ✅ Supported |
-
+|  FeedYourTeto   | ✅ Supported |
 
 ---
 
