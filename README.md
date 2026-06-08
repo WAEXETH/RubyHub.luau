@@ -1,62 +1,17 @@
-# 🌸 Hi, I'm Wawa
-
-<img src="images/profile.png" width="180" />
-
-### 🎮 Roblox Developer
-
-> Making random things with Lua, HTML, CSS and JavaScript
+# 🚀 SuperCool DevTool 🌈
+> "ทำให้ชีวิต Dev ง่ายขึ้น... แถมยังน่ารักด้วยนะ!"
 
 ---
 
-## 🛠 Dev Tools
-
-<img src="https://skillicons.dev/icons?i=lua,html,css,js,github,vscode" />
-
----
-
-## 🌟 About Me
-
-* 🎮 Roblox Scripter
-* 💻 Web Developer Beginner
-* 🎵 Music Enjoyer
-* 📺 Anime Fan
-* ☕ Coding at 3 AM
+### ✨ ฟีเจอร์เด็ดๆ
+- **Magic Automate:** กดปุ๊บ งานเสร็จปั๊บ! 🪄
+- **Playful UI:** สีสันสดใส สบายตา ไม่เครียดแน่นอน
+- **Lightweight:** ขนาดเบามาก เหมือนปุยนุ่น ☁️
 
 ---
 
-## 📊 GitHub Stats
-
-![Stats](https://github-readme-stats.vercel.app/api?username=YOUR_USERNAME\&show_icons=true)
-
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=YOUR_USERNAME\&layout=compact)
-
----
-
-## 🎵 Currently Listening
-
-```text
-🎧 คนนี้ คนนี้
-🎤 ต๊อด พงษ์ศักดิ์ แซ่เซอ
-```
-
----
-
-## 🌈 Fun Zone
-
-<img src="https://media.tenor.com/2roX3uxz_68AAAAC/cat-space.gif" width="200" />
-
-```lua
-while true do
-    print("Luby Hub > Everything")
-end
-```
-
----
-
-## 📫 Contact
-
-💙 Discord: YourDiscord
-
-📘 Facebook: YourFacebook
-
-🎮 Steam: YourSteam
+### 📸 ดูความน่ารักกันหน่อย
+| ก่อนใช้ | หลังใช้ |
+| :---: | :---: |
+| 😞 (มืดมน) | 😍 (สดใส) |
+| ![Before](path/to/before.png) | ![After](path/to/after.png) |
