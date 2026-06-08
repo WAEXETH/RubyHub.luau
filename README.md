@@ -1,4 +1,3 @@
 <p align="center">
-  <img src="<img width="735" height="414" alt="Konohoshi Umika, Akeuchi Yu" src="https://github.com/user-attachments/assets/6923bf0c-2251-4820-9cd6-9ea88d4b4ccc" />
-" width="400" />
+  <img src="https://i.pinimg.com/736x/56/0e/4a/560e4a74dc644dbf119306598f145a3d.jpg" width="400" />
 </p>
