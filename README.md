@@ -1,125 +1,126 @@
 <div align="center">
 
-# 💎 RubyHub.luau
+# 💎 RubyHub
 
-**คลังสคริปต์ Roblox (Lua/Luau) ที่เขียนเล่นสนุก ๆ ใช้งานง่าย แค่คัดลอกแล้วรัน**
+### ✦ Roblox Script Collection ✦
+**รวมสคริปต์ Roblox ใช้งานง่าย · อัปเดตสม่ำเสมอ · ทำเพื่อความสนุก**
+
+<br>
 
 ![Language](https://img.shields.io/badge/Language-Lua-2C2D72?style=for-the-badge&logo=lua&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Roblox-E2231A?style=for-the-badge&logo=roblox&logoColor=white)
-![Commits](https://img.shields.io/github/commit-activity/t/WAEXETH/RubyHub.luau?style=for-the-badge)
-![Last Commit](https://img.shields.io/github/last-commit/WAEXETH/RubyHub.luau?style=for-the-badge)
+![Scripts](https://img.shields.io/badge/Scripts-9-e0115f?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Active-2ea44f?style=for-the-badge)
+![Commits](https://img.shields.io/github/commit-activity/t/WAEXETH/RubyHub.luau?style=for-the-badge&color=blueviolet)
 
-*"This is just my writing for fun, nothing much. I do it for fun, I don't expect anything in return."*
+<br>
+
+[🚀 Quick Start](#-quick-start) •
+[📜 Script List](#-script-list) •
+[🧩 Executors](#-supported-executors) •
+[❓ FAQ](#-faq) •
+[📞 Contact](#-contact)
 
 </div>
 
 ---
 
-## 📚 สารบัญ
+## ✨ เกี่ยวกับโปรเจกต์ | About
 
-- [🎮 รายการสคริปต์](#-รายการสคริปต์)
-- [💻 วิธีติดตั้งและใช้งาน](#-วิธีติดตั้งและใช้งาน-how-to-execute)
-- [🧰 Executor ที่รองรับ](#-executor-ที่รองรับ)
-- [❓ ปัญหาที่พบบ่อย](#-ปัญหาที่พบบ่อย)
-- [⚠️ ข้อควรระวัง](#️-ข้อควรระวัง)
-- [🤝 ติดต่อและสนับสนุน](#-ติดต่อและสนับสนุน)
+**RubyHub** คือพื้นที่รวบรวมสคริปต์ Roblox ที่ผมเขียนเล่นเพื่อความสนุก ไม่หวังผลตอบแทนใดๆ
+ทุกสคริปต์ออกแบบให้ **วางแล้วรันได้ทันที** ไม่ต้องตั้งค่ายุ่งยาก
+
+> *This is just my writing for fun. I do it for fun, I don't expect anything in return.*
 
 ---
 
-## 🎮 รายการสคริปต์
+## 🚀 Quick Start
 
-| สคริปต์ | ไฟล์ | สถานะ |
-|:--|:--|:--:|
-| 🔹 AUT | [`AUT.lua`](./AUT.lua) | ✅ |
-| 🗡️ Cursed Blade | [`CursedBlade[ALPHA].lua`](./CursedBlade[ALPHA].lua) | 🧪 Alpha |
-| 👁️ ESP CTS | [`ESPCTS.lua`](./ESPCTS.lua) | ✅ |
-| 🍞 Feed Your Teto | [`FeedYourTeto.lua`](./FeedYourTeto.lua) | ✅ |
-| 🏃 Last Run | [`LastRun.lua`](./LastRun.lua) | ✅ |
-| 🔹 MTC | [`MTC.lua`](./MTC.lua) | ✅ |
-| 🥷 Ninja Legends | [`NinjaLegendsby.lua`](./NinjaLegendsby.lua) | ✅ |
-| 🏍️ Rider World | [`RiderWorld.lua`](./RiderWorld.lua) | ✅ |
-| 🌸 Sakura Stand | [`SakuraStand.lua`](./SakuraStand.lua) | ✅ |
+### วิธีติดตั้งและใช้งาน (How to Execute)
 
-> 💡 สคริปต์ต้อง **ตรงกับเกม** ที่คุณกำลังเล่นอยู่ จึงจะใช้งานได้
+**1️⃣ เปิดเกม Roblox** ที่ต้องการเล่น *(ต้องตรงกับสคริปต์ที่ใช้)*
 
----
+**2️⃣ เปิด Executor** ที่รองรับ *(ดูรายชื่อด้านล่าง)*
 
-## 💻 วิธีติดตั้งและใช้งาน (How to Execute)
-
-1. 🎯 **เปิดเกม Roblox** ที่ต้องการเล่น (ต้องตรงกับสคริปต์ที่ใช้)
-2. ⚙️ **เปิด Executor** ของคุณ
-3. 📋 **คัดลอกโค้ดรันเนอร์** ด้านล่าง ไปวางใน Executor แล้วกดปุ่ม `Execute`
+**3️⃣ คัดลอกโค้ดโหลดเดอร์** ของสคริปต์ที่ต้องการ → วางใน Executor → กดปุ่ม `Execute`
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/ชื่อไฟล์.lua"))()
-```
-
-> เปลี่ยน `ชื่อไฟล์.lua` เป็นสคริปต์ที่ต้องการ เช่น `SakuraStand.lua`
-
-### ตัวอย่าง
-
-```lua
--- Sakura Stand
-loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/SakuraStand.lua"))()
+-- ตัวอย่าง (Example)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/AUT.lua"))()
 ```
 
 ---
 
-## 🧰 Executor ที่รองรับ
+## 📜 Script List
 
-| Executor | รองรับ |
-|:--|:--:|
-| Potassium | ✅ |
-| Madium | ✅ |
-| Wave | ✅ |
-| Volt | ✅ |
-| อื่น ๆ | ✅ รองรับ `loadstring` และ `HttpGet` |
+| # | สคริปต์ (Script) | ไฟล์ | โหลดเดอร์ (Loader) |
+|:-:|:--|:--|:--|
+| 1 | **AUT** | `AUT.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/AUT.lua"))()`</details> |
+| 2 | **Cursed Blade** `ALPHA` | `CursedBlade[ALPHA].lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/CursedBlade%5BALPHA%5D.lua"))()`</details> |
+| 3 | **ESP CTS** | `ESPCTS.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/ESPCTS.lua"))()`</details> |
+| 4 | **Feed Your Teto** | `FeedYourTeto.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/FeedYourTeto.lua"))()`</details> |
+| 5 | **Last Run** | `LastRun.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/LastRun.lua"))()`</details> |
+| 6 | **MTC** | `MTC.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/MTC.lua"))()`</details> |
+| 7 | **Ninja Legends** | `NinjaLegendsby.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/NinjaLegendsby.lua"))()`</details> |
+| 8 | **Rider World** | `RiderWorld.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/RiderWorld.lua"))()`</details> |
+| 9 | **Sakura Stand** | `SakuraStand.lua` | <details><summary>📋 Copy</summary><br>`loadstring(game:HttpGet("https://raw.githubusercontent.com/WAEXETH/RubyHub.luau/main/SakuraStand.lua"))()`</details> |
+
+> 💡 **Tip:** สคริปต์แต่ละตัวใช้ได้เฉพาะเกมที่ตรงกันเท่านั้น
 
 ---
 
-## ❓ ปัญหาที่พบบ่อย
+## 🧩 Supported Executors
+
+| Executor | สถานะ |
+|:--|:-:|
+| **Potassium** | ✅ |
+| **Madium** | ✅ |
+| **Wave** | ✅ |
+| **Volt** | ✅ |
+| อื่นๆ ที่รองรับ `loadstring` + `HttpGet` | ✅ |
+
+---
+
+## ❓ FAQ
 
 <details>
-<summary><b>สคริปต์ไม่ทำงาน / ไม่มีอะไรเกิดขึ้น</b></summary>
+<summary><b>สคริปต์ไม่ทำงาน ต้องทำยังไง?</b></summary>
+<br>
 
-- ตรวจสอบว่าเปิดเกมที่ **ตรงกับสคริปต์** แล้ว
-- รอให้เกมโหลดเสร็จก่อนกด Execute
+- ตรวจสอบว่าเข้าเกมถูกตัวกับสคริปต์
 - ลองอัปเดต Executor เป็นเวอร์ชันล่าสุด
+- เปิดเกมใหม่แล้วรันอีกครั้ง
+- ถ้ายังไม่ได้ เปิด **Issue** แจ้งได้เลย
 
 </details>
 
 <details>
-<summary><b>ขึ้น error เกี่ยวกับ HttpGet / loadstring</b></summary>
+<summary><b>สคริปต์ฟรีไหม?</b></summary>
+<br>
 
-Executor ของคุณอาจไม่รองรับฟังก์ชันนี้ ลองเปลี่ยนไปใช้ Executor ตัวอื่นในตารางด้านบน
-
-</details>
-
-<details>
-<summary><b>เกมอัปเดตแล้วสคริปต์พัง</b></summary>
-
-เปิด [Issues](../../issues) แจ้งชื่อสคริปต์และข้อความ error ได้เลย
+ฟรีทั้งหมด ทำเพื่อความสนุกครับ 💖
 
 </details>
 
 ---
 
-## ⚠️ ข้อควรระวัง
+## ⚠️ Disclaimer
 
-- โปรเจกต์นี้ทำขึ้น **เพื่อความสนุกและการเรียนรู้** เท่านั้น
-- การใช้สคริปต์ในเกมอาจขัดกับข้อกำหนดของ Roblox และเกมนั้น ๆ และอาจทำให้บัญชีถูกลงโทษได้ **ใช้ด้วยความเสี่ยงของตัวเอง**
-- แนะนำให้ทดลองกับ **บัญชีรอง** เสมอ
+- โปรเจกต์นี้จัดทำเพื่อ **การศึกษาและความสนุก** เท่านั้น
+- การใช้งานเป็น **ความรับผิดชอบของผู้ใช้เอง** การใช้สคริปต์ในเกมอาจขัดต่อข้อกำหนดของ Roblox และเสี่ยงต่อการถูกแบนบัญชี
+- ผู้พัฒนาไม่รับผิดชอบความเสียหายใดๆ ที่เกิดขึ้น
+- ไม่มีส่วนเกี่ยวข้องกับ Roblox Corporation
 
 ---
 
-## 🤝 ติดต่อและสนับสนุน
+## 📞 Contact
 
-- 🐛 พบบั๊ก หรืออยากเสนอไอเดีย → เปิด [Issue](../../issues)
-- ⭐ ถ้าชอบโปรเจกต์นี้ ฝากกดดาวให้ด้วยนะ
-- 👤 ผู้พัฒนา: [**WAEXETH**](https://github.com/WAEXETH)
+พบบัก หรืออยากเสนอไอเดีย? เปิด [**Issue**](../../issues) ได้เลย
 
 <div align="center">
 
-Made with 💖 by WAEXETH
+### ⭐ ถ้าชอบอย่าลืมกดดาวให้ด้วยนะ! ⭐
+
+**Made with 💎 by [WAEXETH](https://github.com/WAEXETH)**
 
 </div>
